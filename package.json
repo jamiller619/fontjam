@@ -1,0 +1,57 @@
+{
+  "name": "fontjam",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "yarn electron .",
+    "dx": "yarn concurrently --n renderer,main,preload \"yarn dx:renderer\" \"yarn dx:main\" \"yarn build:preload\"",
+    "dx:main": "yarn build:main --watch --onSuccess \"yarn start\"",
+    "dx:renderer": "yarn vite",
+    "build:main": "yarn tsup --tsconfig src/main/tsconfig.json src/main/index.ts --external electron",
+    "build:preload": "yarn tsup --tsconfig src/preload/tsconfig.json src/preload/preload.ts --external electron",
+    "build:config": "yarn json2ts src/shared/config/schema/schema.json src/shared/config/schema/schema.ts",
+    "lint": "yarn eslint src --ext .ts",
+    "lint:fix": "yarn lint --fix"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.2.0",
+    "@types/node": "^20.8.7",
+    "@types/opentype.js": "^1.3.7",
+    "@types/react": "^18.2.31",
+    "@types/react-dom": "^18.2.14",
+    "@types/styled-components": "^5.1.29",
+    "@typescript-eslint/eslint-plugin": "^6.8.0",
+    "@typescript-eslint/parser": "^6.8.0",
+    "@vitejs/plugin-react": "^4.1.0",
+    "babel-plugin-styled-components": "^2.1.4",
+    "concurrently": "^8.2.2",
+    "electron": "^27.0.2",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "json-schema-to-typescript": "^13.1.1",
+    "prettier": "^2.7.1",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.5.0",
+    "vite-tsconfig-paths": "^4.2.1"
+  },
+  "dependencies": {
+    "@radix-ui/themes": "^2.0.0",
+    "conf": "10.2.0",
+    "file-type": "16.5.4",
+    "logger": "git+https://github.com/jamiller619/logger.git",
+    "opentype.js": "^1.3.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.17.0",
+    "styled-components": "^6.1.0",
+    "swr": "^2.2.4"
+  }
+}

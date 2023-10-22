@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+
+    "lib": ["ESNext"],
+    "skipLibCheck": true,
+
+    "jsx": "preserve",
+    "newLine": "lf",
+    "noErrorTruncation": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true
+  },
+  "exclude": ["node_modules", "dist"]
+}

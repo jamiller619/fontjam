@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "ConfigSchema",
+  "type": "object",
+  "required": [
+    "library.url",
+    "db.url"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "library.url": {
+      "title": "Font Library Directory",
+      "type": "string",
+      "format": "uri",
+      "description": "The directory where Fontjam stores font libraries."
+    },
+    "db.url": {
+      "title": "Database Directory",
+      "type": "string",
+      "format": "uri",
+      "description": "Directory where databases files are saved."
+    }
+  }
+}
