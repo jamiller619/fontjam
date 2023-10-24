@@ -2,7 +2,7 @@ import path from 'node:path'
 import { app } from 'electron'
 import logger from 'logger'
 import MainWindow from '~/MainWindow'
-import { Scanner } from '~/scanner'
+import { IpcAPI } from './ipc/api'
 
 const log = logger('main.index')
 
@@ -17,9 +17,9 @@ const onReady = async () => {
 
   await win.show()
 
-  for await (const font of new Scanner().scan()) {
-    console.log(font.names.fontFamily)
-  }
+  const api = new IpcAPI()
+
+  await api.start()
 }
 
 app.whenReady().then(onReady)

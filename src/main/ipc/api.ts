@@ -15,6 +15,6 @@ export class IpcAPI {
   }
 
   registerHandlers() {
-    handle('scan.dir', () => new Scanner().scan())
+    // handle('get.fonts', (dir) => new Scanner(dir).scan())
   }
 }

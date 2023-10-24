@@ -1,10 +1,12 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "lib": ["DOM", "ESNext"],
+    "jsx": "preserve",
     "paths": {
       "~/*": ["./*"],
-      "@shared/*": ["./*"]
+      "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "**/*.tsx"]
 }
