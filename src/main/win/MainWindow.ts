@@ -13,6 +13,7 @@ export default class MainWindow extends BrowserWindow {
       show: false,
       backgroundColor: '#1c1c1c',
       titleBarStyle: 'hidden',
+      backgroundMaterial: 'mica',
       titleBarOverlay: {
         color: '#1c1c1c',
         symbolColor: '#fff',

@@ -1,14 +1,15 @@
 import path from 'node:path'
 import { app } from 'electron'
 import logger from 'logger'
-import MainWindow from '~/MainWindow'
-import { IpcAPI } from './ipc/api'
+import api from '~/lib/api'
+import library from '~/lib/library'
+import MainWindow from '~/win/MainWindow'
 
 const log = logger('main.index')
 
 let win: MainWindow | null = null
 
-const onReady = async () => {
+async function onReady() {
   await logger.init(path.join(app.getPath('logs'), 'fontjam.log'))
 
   log.info('App ready, creating main window')
@@ -17,9 +18,10 @@ const onReady = async () => {
 
   await win.show()
 
-  const api = new IpcAPI()
+  log.info('MainWindow ready, starting api')
 
-  await api.start()
+  await api.start(win)
+  await library.start()
 }
 
 app.whenReady().then(onReady)

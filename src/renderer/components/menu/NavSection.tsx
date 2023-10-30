@@ -1,4 +1,3 @@
-import { Add12Filled as AddIcon } from '@fluentui/react-icons'
 import { Heading } from '@radix-ui/themes'
 import { ReactNode, useRef } from 'react'
 import { styled } from 'styled-components'
@@ -59,7 +58,7 @@ export default function NavSection({ children, label }: NavSectionProps) {
       <AddItem
         $isVisible={isHovered}
         href={`/add/${label.singular}`.toLowerCase()}
-        icon={<AddIcon />}
+        icon="Add12Filled"
         label={`Add ${label.singular}`}
       />
     </Navlist>

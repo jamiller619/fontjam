@@ -1,7 +1,7 @@
-type Collection = {
-  label: string
+import Base from './Base'
+
+type Collection = Base & {
   query: string
-  isEditable: boolean
 }
 
 export default Collection

@@ -5,7 +5,7 @@ import AnimatedLink from '~/components/AnimatedLink'
 
 type NavItemProps = HTMLAttributes<HTMLLIElement> & {
   label: string
-  icon: React.ReactNode
+  icon: string
   href: string
 }
 
@@ -34,11 +34,22 @@ const IconContainer = styled(Flex)`
   justify-content: center;
 `
 
+const icons = await import('@fluentui/react-icons')
+
+const renderIcon = (name: string) => {
+  const Icon = icons[name as keyof typeof icons]
+
+  // @ts-ignore: This works fine, but TS doesn't like it.
+  // Presumably because @fluentui contains exports that
+  // aren't icons, but we limit the name to only icons.
+  return <Icon />
+}
+
 export default function NavItem({ label, icon, href, ...props }: NavItemProps) {
   return (
     <Container {...props}>
       <Link to={href}>
-        <IconContainer>{icon}</IconContainer> {label}
+        <IconContainer>{renderIcon(icon)}</IconContainer> {label}
       </Link>
     </Container>
   )

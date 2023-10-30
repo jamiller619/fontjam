@@ -1,4 +1,4 @@
-import { HTMLAttributes, useRef } from 'react'
+import { HTMLAttributes, useCallback, useRef } from 'react'
 import { flushSync } from 'react-dom'
 import { LinkProps, useNavigate } from 'react-router-dom'
 
@@ -28,5 +28,18 @@ export default function AnimatedLink({
       }}>
       {children}
     </a>
+  )
+}
+
+export function useAnimatedNavigate() {
+  const navigate = useNavigate()
+
+  return useCallback(
+    (path: string) => {
+      document.startViewTransition(() => {
+        flushSync(() => navigate(path))
+      })
+    },
+    [navigate]
   )
 }

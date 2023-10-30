@@ -11,6 +11,13 @@ import {
   ToggleButtonGroupItem,
 } from '~/components/input'
 import useAppState from '~/hooks/useAppState'
+import Search from './Search'
+
+const DragRegion = styled('div')`
+  -webkit-app-region: drag;
+  background-color: var(--gray-surface);
+  height: 30px;
+`
 
 const Container = styled(Flex)`
   gap: var(--space-6);
@@ -51,12 +58,6 @@ const ToolbarSlider = styled(Slider)`
   flex-grow: 1;
 `
 
-const DragRegion = styled('div')`
-  -webkit-app-region: drag;
-  background-color: var(--gray-surface);
-  height: 50px;
-`
-
 export default function Toolbar() {
   const [{ previewText, view, previewFontSize }, setAppState] = useAppState()
 
@@ -77,6 +78,7 @@ export default function Toolbar() {
   return (
     <Fragment>
       <DragRegion />
+      <Search />
       <Container>
         <Section>
           <Text size="2">Preview:</Text>

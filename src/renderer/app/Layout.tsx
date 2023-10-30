@@ -1,7 +1,7 @@
 import { Flex } from '@radix-ui/themes'
 import { Outlet } from 'react-router-dom'
 import styled from 'styled-components'
-import { Menu } from '~/components/menu'
+import Menu from './Menu'
 
 const Container = styled(Flex)`
   gap: var(--space-2);

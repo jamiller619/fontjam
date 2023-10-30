@@ -1,16 +1,14 @@
 import { TextField } from '@radix-ui/themes'
-import { ComponentProps, ReactNode } from 'react'
+import { ComponentProps, ReactNode, Ref, forwardRef } from 'react'
 import styled from 'styled-components'
 
 type TextboxProps = ComponentProps<typeof TextField.Input> & {
   icon?: ReactNode
 }
 
-const Container = styled(TextField.Root).attrs({
-  radius: 'medium',
-})`
+const Container = styled(TextField.Root)`
   .rt-TextFieldInput {
-    height: calc(var(--space-6) + 5px);
+    height: var(--space-7);
     color: var(--gray-a10);
 
     &:focus {
@@ -18,7 +16,7 @@ const Container = styled(TextField.Root).attrs({
 
       + .rt-TextFieldChrome {
         outline: none;
-        background-color: var(--gray-a3);
+        background-color: var(--gray-a4);
         color: var(--gray-12);
       }
     }
@@ -28,14 +26,20 @@ const Container = styled(TextField.Root).attrs({
     background-color: var(--gray-a2);
     box-shadow: none;
     border-radius: var(--radius-3);
+    transition: background-color 100ms ease-out;
   }
 `
 
-export default function Textbox({ icon, ...props }: TextboxProps) {
+function Textbox(
+  { icon, radius, color, size, ...props }: TextboxProps,
+  ref: Ref<HTMLInputElement>
+) {
   return (
-    <Container>
+    <Container radius={radius} color={color} size={size}>
       {icon && <TextField.Slot>{icon}</TextField.Slot>}
-      <TextField.Input {...props} />
+      <TextField.Input {...props} ref={ref} />
     </Container>
   )
 }
+
+export default forwardRef(Textbox)
