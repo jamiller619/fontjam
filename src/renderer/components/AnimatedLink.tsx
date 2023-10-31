@@ -1,16 +1,14 @@
-import { HTMLAttributes, useCallback, useRef } from 'react'
+import { HTMLAttributes, Ref, forwardRef, useCallback } from 'react'
 import { flushSync } from 'react-dom'
 import { LinkProps, useNavigate } from 'react-router-dom'
 
 type AnimatedLinkProps = LinkProps & HTMLAttributes<HTMLAnchorElement>
 
-export default function AnimatedLink({
-  to,
-  children,
-  ...props
-}: AnimatedLinkProps) {
+function AnimatedLink(
+  { to, children, ...props }: AnimatedLinkProps,
+  ref: Ref<HTMLAnchorElement>
+) {
   const navigate = useNavigate()
-  const ref = useRef(null)
 
   return (
     <a
@@ -30,6 +28,8 @@ export default function AnimatedLink({
     </a>
   )
 }
+
+export default forwardRef(AnimatedLink)
 
 export function useAnimatedNavigate() {
   const navigate = useNavigate()

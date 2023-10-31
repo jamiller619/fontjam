@@ -1,17 +1,17 @@
 import { Badge, Box, Flex, Heading, Text } from '@radix-ui/themes'
-import { HTMLAttributes, useMemo } from 'react'
+import { HTMLAttributes } from 'react'
 import { styled } from 'styled-components'
+import { Family } from '@shared/types'
 import AnimatedLink from '~/components/AnimatedLink'
 import useAppState from '~/hooks/useAppState'
-import { LocalFontData } from '~/hooks/useFonts'
 
-type FontCardProps = HTMLAttributes<HTMLDivElement> & {
-  fontName: string
-  fonts: LocalFontData[]
+type CardProps = HTMLAttributes<HTMLDivElement> & {
+  family: Family
 }
 
 const Container = styled(Flex)`
   width: 220px;
+  min-height: 220px;
   padding: var(--space-3) var(--space-3) var(--space-2) var(--space-2);
   border-radius: var(--radius-2);
   border: 3px solid var(--gray-4);
@@ -58,35 +58,29 @@ const Preview = styled(Box)<{ $font: string; $size: number }>`
   font-size: ${({ $size }) => $size}px;
 `
 
-export default function FontCard({ fontName, fonts, ...props }: FontCardProps) {
+export default function Card({ family, ...props }: CardProps) {
   const [{ previewText, previewFontSize }] = useAppState()
-  const styles = useMemo(
-    () => ({
-      items: fonts.slice(0, 4),
-      total: fonts.length,
-    }),
-    [fonts]
-  )
+  const styles = family.fonts.map((f) => f.style)
 
   return (
     <Container {...props}>
       {/* <Container style={{ height: previewFontSize * 10 + 10 }}> */}
       <Heading asChild size="5">
-        <AnimatedLink to={`/family/${fontName}`}>{fontName}</AnimatedLink>
+        <AnimatedLink to={`/family/${family.name}`}>{family.name}</AnimatedLink>
       </Heading>
-      <Preview $font={fontName} $size={previewFontSize}>
+      <Preview $font={family.name} $size={previewFontSize}>
         {previewText}
       </Preview>
       <Footer>
         <Box m="1">
           <Text size="1" weight="bold">
-            Styles ({styles.total})
+            Styles ({styles.length})
           </Text>
         </Box>
-        {styles.items.map((font) => (
-          <FooterBadge key={font.fullName}>{font.style}</FooterBadge>
+        {styles.slice(0, 3).map((style) => (
+          <FooterBadge key={`${family}:${style}`}>{style}</FooterBadge>
         ))}
-        {styles.total > styles.items.length && <FooterBadge>...</FooterBadge>}
+        {/* {styles.total > styles.items.length && <FooterBadge>...</FooterBadge>} */}
       </Footer>
     </Container>
   )

@@ -1,10 +1,9 @@
 import path from 'node:path'
 import { app } from 'electron'
 import logger from 'logger'
-import { Page, Paged, Sort } from '@shared/types'
+import { Base, Page, Paged, Sort, WithoutId } from '@shared/types'
 import { Database, connect, sql } from '~/lib/sqlite'
 import { name as packageName } from '../../../package.json'
-import { Base, WithoutId } from './types'
 
 const log = logger('db.repository')
 
@@ -13,7 +12,7 @@ export const filters = {
     return sql`ORDER BY ${sort.col} ${sort.dir}`
   },
   page(page: Page) {
-    return sql`LIMIT ${page.length} OFFSET ${page.index}`
+    return sql`LIMIT ${page.index}, ${page.length}`
   },
 }
 
@@ -22,19 +21,21 @@ const fileName = path.join(appData, packageName, 'databases', `fontjam.db`)
 
 export default class Repository<T extends Base> {
   #table: string
-  ready: Promise<void>
+  db: Database<T>
+
   query: Database<T>['query']
   queryMany: Database<T>['queryMany']
 
+  ready: Promise<void>
+
   constructor(table: 'libraries' | 'fonts', schema: string) {
     this.#table = table
-
-    const db = connect<T>(fileName, () => {
+    this.db = connect<T>(fileName, () => {
       log.info(`Initialized ${table} repository`)
     })
 
-    this.query = db.query.bind(db)
-    this.queryMany = db.queryMany.bind(db)
+    this.query = this.db.query.bind(this.db)
+    this.queryMany = this.db.queryMany.bind(this.db)
 
     this.ready = this.query(
       sql`CREATE TABLE IF NOT EXISTS ${this.#table} (${schema})`
@@ -56,13 +57,18 @@ export default class Repository<T extends Base> {
     }
   }
 
-  insert(data: WithoutId<T>) {
+  async insert(data: WithoutId<T>) {
     const cols = Object.keys(data)
     const vals = Object.values(data)
 
-    return this.query(
+    const id = await this.db.runAsync(
       sql`INSERT INTO ${this.#table} (${cols}) VALUES (${vals})`
     )
+
+    return {
+      ...data,
+      id,
+    }
   }
 
   get(id: number) {

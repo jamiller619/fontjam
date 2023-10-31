@@ -1,11 +1,12 @@
 import { Box } from '@radix-ui/themes'
 import styled from 'styled-components'
 import { Logo, NavItem, NavSection } from '~/components/menu'
-import useAPI from '~/hooks/useAPI'
+import { useLibraries } from '~/hooks/useLibrary'
 
 const Container = styled(Box)`
   background-color: var(--gray-surface);
   padding: var(--space-2);
+  color: var(--gray-11);
 `
 
 const LogoContainer = styled('div')`
@@ -19,7 +20,7 @@ const libraryLabel = {
 }
 
 export default function Menu() {
-  const { data: libraries } = useAPI('get.libraries')
+  const libraries = useLibraries()
 
   return (
     <Container>
@@ -28,7 +29,7 @@ export default function Menu() {
       </LogoContainer>
       <nav>
         <NavSection label={libraryLabel}>
-          {libraries?.records?.map((library) => (
+          {libraries?.map((library) => (
             <NavItem
               key={library.id}
               href={`/library/${library.id}`}

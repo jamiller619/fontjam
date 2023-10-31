@@ -6,6 +6,7 @@ import {
 import { AddItem } from '~/pages/add'
 import { Family } from '~/pages/family'
 import { Home } from '~/pages/home'
+import { Library } from '~/pages/library'
 import Layout from './Layout'
 
 const routes: RouteObject[] = [
@@ -14,19 +15,23 @@ const routes: RouteObject[] = [
     element: <Layout />,
     children: [
       {
-        path: '/',
-        element: <Home />,
-        children: [
-          {
-            path: '/family/:name',
-            element: <Family />,
-          },
-          {
-            path: '/add/:type',
-            element: <AddItem />,
-          },
-        ],
+        path: '/library/:id',
+        element: <Library />,
       },
+      // {
+      //   path: '/',
+      //   element: <Home />,
+      //   children: [
+      //     {
+      //       path: '/family/:name',
+      //       element: <Family />,
+      //     },
+      //     {
+      //       path: '/add/:type',
+      //       element: <AddItem />,
+      //     },
+      //   ],
+      // },
     ],
   },
 ]

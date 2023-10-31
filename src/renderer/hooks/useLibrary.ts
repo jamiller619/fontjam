@@ -1,52 +1,46 @@
-import { useEffect, useMemo } from 'react'
-import { useSessionStorage } from 'usehooks-ts'
-import useAPI from './useAPI'
+import { useEffect } from 'react'
+import { useIsMounted, useSessionStorage } from 'usehooks-ts'
+import { Family, Library, Page } from '@shared/types'
 
-export type StorableFontData = Omit<FontData, 'blob'>
-
-const mapFonts = (fonts: FontData[]) => {
-  const mapped: StorableFontData[] = fonts.map((font) => ({
-    family: font.family,
-    fullName: font.fullName,
-    postscriptName: font.postscriptName,
-    style: font.style,
-  }))
-
-  return mapped
-}
-
-export function useLibraryFonts(id?: string) {
-  const library = useLibrary(id)
-  const [fonts, setFonts] = useSessionStorage<
-    Record<string, StorableFontData[]>
-  >(`library.${id ?? 0}.fonts`, {})
+export function useFontFamilies(
+  libraryId: number,
+  page: Page = { index: 0, length: 48 }
+) {
+  // Antipattern, sure. But Electron doesn't implement an
+  // AbortController for IPC, so we don't have a choice...
+  const isMounted = useIsMounted()
+  const library = useLibrary(libraryId)
+  const key = `library.${libraryId}.fonts`
+  const [families, setFamilies] = useSessionStorage<Family[]>(key, [])
 
   useEffect(() => {
-    if (!library) return
-    if (Object.keys(fonts).length > 0) return
+    if (families.length > 0) return
 
-    if (library.name === 'System') {
-      window.queryLocalFonts().then((fonts) => {
-        const mapped = mapFonts(fonts)
+    window.api['get.fonts'](libraryId, page).then((response) => {
+      if (isMounted()) setFamilies(response.records)
+    })
+  }, [families.length, isMounted, libraryId, page, setFamilies])
 
-        // @ts-ignore: this works, no idea how to fix it on
-        // the typescript side
-        setFonts(Object.groupBy(mapped, ({ family }) => family))
-      })
-    }
-  }, [fonts, library, setFonts])
-
-  return { fonts, library } as const
+  return { families, library } as const
 }
 
-export default function useLibrary(id?: string) {
-  const { data: libraries } = useAPI('get.libraries')
+export default function useLibrary(id: number) {
+  const libraries = useLibraries()
 
-  return useMemo(() => {
-    if (id == null) {
-      return libraries?.records.find((lib) => lib.name === 'System')
-    }
+  return libraries.find((library) => library.id === id)
+}
 
-    return libraries?.records.find((lib) => lib.id === id)
-  }, [id, libraries?.records])
+export function useLibraries() {
+  const [libraries, setLibraries] = useSessionStorage<Library[]>(
+    `libraries`,
+    []
+  )
+
+  useEffect(() => {
+    if (libraries.length > 0) return
+
+    window.api['get.libraries']().then(setLibraries)
+  })
+
+  return libraries
 }

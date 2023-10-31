@@ -2,6 +2,7 @@ import { Heading } from '@radix-ui/themes'
 import { ReactNode, useRef } from 'react'
 import { styled } from 'styled-components'
 import { useHover } from 'usehooks-ts'
+import usePress from '~/hooks/usePress'
 import NavItem from './NavItem'
 
 type NavSectionProps = {
@@ -18,6 +19,7 @@ const Navlist = styled('ol')`
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--space-1);
 `
 
 const Label = styled(Heading).attrs({

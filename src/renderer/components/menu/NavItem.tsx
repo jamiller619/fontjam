@@ -1,7 +1,11 @@
 import { Flex } from '@radix-ui/themes'
-import { HTMLAttributes } from 'react'
+import { HTMLAttributes, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 import AnimatedLink from '~/components/AnimatedLink'
+import useClassNames from '~/hooks/useClassNames'
+import usePress from '~/hooks/usePress'
+import CustomIcon from './CustomIcon'
 
 type NavItemProps = HTMLAttributes<HTMLLIElement> & {
   label: string
@@ -22,9 +26,21 @@ const Link = styled(AnimatedLink)`
   color: currentColor;
   text-decoration: none;
   font-size: var(--font-size-2);
+  transition: background-color 100ms ease-in-out;
 
-  &:hover {
+  &.active {
     background-color: var(--gray-a3);
+    color: var(--gray-12);
+  }
+
+  &.pressed {
+    background-color: var(--gray-a2);
+    color: var(--gray-12);
+  }
+
+  &:hover:not(.active):not(.pressed) {
+    background-color: var(--gray-a3);
+    color: var(--gray-12);
   }
 `
 
@@ -34,22 +50,22 @@ const IconContainer = styled(Flex)`
   justify-content: center;
 `
 
-const icons = await import('@fluentui/react-icons')
-
-const renderIcon = (name: string) => {
-  const Icon = icons[name as keyof typeof icons]
-
-  // @ts-ignore: This works fine, but TS doesn't like it.
-  // Presumably because @fluentui contains exports that
-  // aren't icons, but we limit the name to only icons.
-  return <Icon />
-}
-
 export default function NavItem({ label, icon, href, ...props }: NavItemProps) {
+  const location = useLocation()
+  const ref = useRef<HTMLAnchorElement>(null)
+  const isPressed = usePress(ref)
+  const classNames = useClassNames({
+    active: location.pathname === href,
+    pressed: isPressed,
+  })
+
   return (
     <Container {...props}>
-      <Link to={href}>
-        <IconContainer>{renderIcon(icon)}</IconContainer> {label}
+      <Link to={href} {...classNames} ref={ref}>
+        <IconContainer>
+          <CustomIcon name={icon} />
+        </IconContainer>
+        {label}
       </Link>
     </Container>
   )

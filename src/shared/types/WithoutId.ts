@@ -4,4 +4,6 @@ export type Base = {
   [key: string]: number | string | null
 }
 
-export type WithoutId<T extends Base> = Omit<T, 'id'>
+type WithoutId<T extends Base> = Omit<T, 'id'>
+
+export default WithoutId

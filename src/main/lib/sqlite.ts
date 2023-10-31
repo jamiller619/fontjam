@@ -27,25 +27,34 @@ export function sql(strings: TemplateStringsArray, ...keys: (Prim | Prim[])[]) {
 }
 
 export class Database<T> extends sqlite.Database {
-  query(query: string) {
-    return new Promise<T>((resolve, reject) => {
+  runAsync(query: string) {
+    return new Promise<number>((resolve, reject) => {
+      super.run(query, function callback(err) {
+        if (err) reject(err)
+        else resolve(this.lastID)
+      })
+    })
+  }
+
+  query<R = T>(query: string) {
+    return new Promise<R>((resolve, reject) => {
       this.get(query, (err, result) => {
         if (err) {
           reject(err)
         } else {
-          resolve(result as T)
+          resolve(result as R)
         }
       })
     })
   }
 
-  queryMany(query: string) {
-    return new Promise<T[]>((resolve, reject) => {
+  queryMany<R = T>(query: string) {
+    return new Promise<R[]>((resolve, reject) => {
       this.all(query, (err, rows) => {
         if (err) {
           reject(err)
         } else {
-          resolve(rows as T[])
+          resolve(rows as R[])
         }
       })
     })

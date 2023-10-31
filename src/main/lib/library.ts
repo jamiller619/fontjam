@@ -1,9 +1,10 @@
 import logger from 'logger'
 import { Library } from '@shared/types'
 import { Repository } from '~/db'
-import font from '~/lib/font'
+import font, { InvalidFontFileError } from '~/lib/font'
 import scanner from '~/lib/scanner'
 import { sql } from '~/lib/sqlite'
+import task from './task'
 
 const log = logger('lib.library')
 
@@ -13,88 +14,137 @@ const schema = sql`
 	createdAt INTEGER NOT NULL,
 	isEditable INTEGER DEFAULT 1,
 	icon TEXT,
-	path TEXT NOT NULL UNIQUE
+  path TEXT NOT NULL UNIQUE
 `
 
-const LibraryRepository = new Repository<Library>('libraries', schema)
-
-function getSystemFontDirectory() {
+function getFontDirectories() {
   const { platform } = process
 
   switch (platform) {
     case 'darwin':
-      return '/System/Library/Fonts'
+      return {
+        system: '/System/Library/Fonts',
+      }
     case 'linux':
-      return '/usr/share/fonts'
+      return {
+        system: '/usr/share/fonts',
+      }
     case 'win32':
-      return '%windir%\\Fonts'
-    default:
-      throw new Error(`Unsupported platform: ${platform}`)
+      return {
+        system: '%windir%\\Fonts',
+        user: '%localappdata%\\Microsoft\\Windows\\Fonts',
+      }
+  }
+
+  return undefined
+}
+
+async function scanLibrary(library: Library) {
+  const startTime = Date.now()
+  let count = 0
+
+  log.info(`Scanning "${library.name}" library @ ${library.path}`)
+
+  for await (const file of scanner.scanDir(library.path)) {
+    try {
+      const resolved = font.resolvePath(library.path, file)
+      const exists = await font.exists(library.id, resolved)
+
+      if (exists) {
+        continue
+      }
+
+      const data = await font.parseFile(library, file)
+
+      await font.create(data)
+
+      count += 1
+
+      log.info(`Added ${file}`)
+    } catch (err) {
+      if (err instanceof InvalidFontFileError) {
+        log.debug(`Skipping ${file}`, err.message)
+      } else {
+        log.error(`Skipping ${file}`, err as Error)
+      }
+    }
+  }
+
+  const endTime = Date.now()
+  const duration = endTime - startTime
+
+  log.info(`Added ${count} fonts to ${library.name} in ${duration}ms`)
+}
+
+function mapLibrary(data: Library): Library {
+  return {
+    ...data,
+    path: library.resolvePath(data.path),
   }
 }
 
-export default {
-  async start() {
-    await LibraryRepository.ready
+async function initializeLibraries(libraries: Library[]) {
+  return function createDefaultLibrary(name: string, path?: string) {
+    if (!path) {
+      return
+    }
 
-    const def = await LibraryRepository.get(1)
+    const exists = libraries.find((l) => l.path === path)
 
-    if (def == null) {
-      log.info(`Creating default library`)
+    if (exists == null) {
+      log.info(`Creating ${name} library`)
 
-      await LibraryRepository.insert({
-        createdAt: Date.now(),
-        name: 'System',
+      return library.addLibrary({
+        name,
+        path,
         isEditable: 0,
-        icon: 'Tv20Regular',
-        path: getSystemFontDirectory(),
       })
+    }
+  }
+}
+
+let repo = null as Repository<Library> | null
+
+const library = {
+  get repo() {
+    return (repo ??= new Repository('libraries', schema))
+  },
+  resolvePath(dir: string) {
+    return dir.replace(/%([^%]+)%/g, (_, name) => process.env[name] ?? '')
+  },
+  scanLibrary: task.createQueue('library.scanner', scanLibrary),
+
+  async getAllLibraries() {
+    const libraries = await this.repo.queryMany(sql`SELECT * FROM libraries`)
+
+    return libraries.map(mapLibrary)
+  },
+
+  async start(): Promise<void> {
+    await this.repo.ready
+
+    const libraries = await library.getAllLibraries()
+    const createLibrary = await initializeLibraries(libraries)
+    const dirs = getFontDirectories()
+
+    await createLibrary('System', dirs?.system)
+    await createLibrary('User', dirs?.user)
+
+    for await (const lib of libraries) {
+      await this.scanLibrary(lib)
     }
   },
 
-  async addLibrary(data: Pick<Library, 'name' | 'path'>) {
-    return LibraryRepository.insert({
+  async addLibrary(data: Pick<Library, 'name' | 'path'> & Partial<Library>) {
+    const library = await this.repo.insert({
       createdAt: Date.now(),
       isEditable: 1,
       icon: 'Tv20Regular',
       ...data,
     })
-  },
 
-  async getLibraries() {
-    const data = await LibraryRepository.all(
-      { index: 0, length: 20 },
-      { col: 'createdAt', dir: 'asc' }
-    )
-
-    return data
-  },
-
-  async scanLibrary(library: Library) {
-    const startTime = Date.now()
-
-    log.info(`Scanning ${library.name}`)
-
-    for await (const file of scanner.scanDir(library.path)) {
-      try {
-        const resolved = font.resolvePath(library.path, file)
-        const exists = await font.exists(library.id, resolved)
-
-        if (exists) {
-          continue
-        }
-
-        const data = await font.parseFile(library.id, file)
-
-        await font.create(data)
-      } catch (err) {
-        log.error(`Skipping ${file}`, err as Error)
-      }
-    }
-
-    const endTime = Date.now()
-    const duration = endTime - startTime
-
-    log.info(`Finished scanning ${library.name} in ${duration}ms`)
+    await this.scanLibrary(library)
   },
 }
+
+export default library

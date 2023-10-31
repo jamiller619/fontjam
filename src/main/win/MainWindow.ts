@@ -1,4 +1,5 @@
 import path from 'node:path'
+import process from 'node:process'
 import { BrowserWindow, app } from 'electron'
 
 const IS_DEV =

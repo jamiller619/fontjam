@@ -51,6 +51,7 @@
     "@radix-ui/themes": "^2.0.0",
     "conf": "10.2.0",
     "fast-sort": "^3.4.0",
+    "fastq": "^1.15.0",
     "file-type": "16.5.4",
     "logger": "git+https://github.com/jamiller619/logger.git",
     "lowdb": "git+https://github.com/jamiller619/lowdb.git",

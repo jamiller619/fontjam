@@ -1,11 +1,12 @@
 import { ChevronLeft20Filled as IndexIcon } from '@fluentui/react-icons'
 import { Flex } from '@radix-ui/themes'
 import { Fragment } from 'react'
-import { useParams } from 'react-router-dom'
+// import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import AnimatedLink from '~/components/AnimatedLink'
 import Backdrop from '~/components/Backdrop'
-import { useFontFamily } from '~/hooks/useFonts'
+
+// import { useFontFamily } from '~/hooks/useFonts'
 
 const Container = styled(Flex)`
   flex-direction: column;
@@ -30,8 +31,8 @@ const Link = styled(AnimatedLink)`
 `
 
 export default function Family() {
-  const { name } = useParams()
-  const { font, error } = useFontFamily(name)
+  // const { name } = useParams()
+  // const { font, error } = useFontFamily(name)
 
   return (
     <Fragment>
@@ -40,10 +41,10 @@ export default function Family() {
         <Link to="/">
           <IndexIcon /> index
         </Link>
-        {error && <p>{error.message}</p>}
+        {/* {error && <p>{error.message}</p>}
         <pre style={{ width: '50vw' }}>
           {JSON.stringify(font?.names, null, 2)}
-        </pre>
+        </pre> */}
       </Container>
     </Fragment>
   )
