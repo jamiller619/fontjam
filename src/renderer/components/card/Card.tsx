@@ -1,37 +1,58 @@
-import { Badge, Box, Flex, Heading, Text } from '@radix-ui/themes'
-import { HTMLAttributes } from 'react'
-import { styled } from 'styled-components'
+import {
+  Circle12Filled as CircleFilledIcon,
+  Circle12Regular as CircleIcon,
+} from '@fluentui/react-icons'
+import { Badge, Flex, Heading } from '@radix-ui/themes'
+import {
+  Fragment,
+  HTMLAttributes,
+  MouseEvent,
+  RefObject,
+  useCallback,
+  useRef,
+} from 'react'
+import { css, styled } from 'styled-components'
 import { Family } from '@shared/types'
 import AnimatedLink from '~/components/AnimatedLink'
+import ContextMenu, { ContextMenuItem } from '~/components/ContextMenu'
+import Preview from '~/components/Preview'
 import useAppState from '~/hooks/useAppState'
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
-  family: Family
+  data: Family
+  isVisible: boolean
+  height: number
 }
 
-const Container = styled(Flex)`
-  width: 220px;
-  min-height: 220px;
-  padding: var(--space-3) var(--space-3) var(--space-2) var(--space-2);
-  border-radius: var(--radius-2);
-  border: 3px solid var(--gray-4);
+const Header = styled(Heading).attrs({
+  size: '5',
+})`
+  margin-bottom: var(--space-1);
+  letter-spacing: 0.02em;
+  color: var(--accent-8);
+  text-decoration: none;
+`
+
+const Container = styled(Flex)<{ $height: number }>`
+  min-height: ${({ $height }) => $height}px;
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-6);
+  background-color: var(--gray-a2);
   flex-direction: column;
   color: var(--gray-9);
+  transition-duration: 120ms;
+  transition-timing-function: ease-in-out;
+  transition-property: background-color, color, transform, box-shadow;
 
   &:hover {
-    background-color: var(--gray-2-translucent);
+    background-color: var(--gray-a3);
     color: var(--gray-12);
-    border-color: var(--accent-8);
+    transform: scale(1.04);
+    box-shadow: 0 3px 30px 5px var(--black-a3);
 
-    a {
+    ${Header} {
       color: var(--accent-9);
     }
-  }
-
-  a {
-    letter-spacing: 0.02em;
-    color: var(--accent-8);
-    text-decoration: none;
   }
 `
 
@@ -42,46 +63,126 @@ const FooterBadge = styled(Badge).attrs({
   mb: '1',
 })``
 
-const Footer = styled(Box)`
-  margin-top: auto;
+const Footer = styled(Flex)`
+  gap: 0;
   font-size: var(--font-size-1);
-  // "Styles" header height + Badge height * no of rows
-  max-height: calc(22px + (24px * 2));
-  overflow: hidden;
+  flex-wrap: wrap;
+  align-items: baseline;
 `
 
-const Preview = styled(Box)<{ $font: string; $size: number }>`
-  flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: ${({ $font }) => $font};
-  font-size: ${({ $size }) => $size}px;
+const contextMenuItems: ContextMenuItem[] = [
+  {
+    text: 'Add to Favorites',
+  },
+  'separator',
+  {
+    text: 'Delete',
+    color: 'red',
+  },
+]
+
+function isInstalled(family: Family) {
+  return family.fonts.every((f) => f.isInstalled)
+}
+
+type InstalledIconProps = {
+  family: Family
+}
+
+const IconContainer = styled('div')<{ $isInstalled: boolean }>`
+  ${({ $isInstalled }) =>
+    $isInstalled &&
+    css`
+      color: var(--green-9);
+    `}
 `
 
-export default function Card({ family, ...props }: CardProps) {
-  const [{ previewText, previewFontSize }] = useAppState()
-  const styles = family.fonts.map((f) => f.style)
+function InstalledIcon({ family }: InstalledIconProps) {
+  const installed = isInstalled(family)
 
   return (
-    <Container {...props}>
-      {/* <Container style={{ height: previewFontSize * 10 + 10 }}> */}
-      <Heading asChild size="5">
-        <AnimatedLink to={`/family/${family.name}`}>{family.name}</AnimatedLink>
-      </Heading>
-      <Preview $font={family.name} $size={previewFontSize}>
-        {previewText}
-      </Preview>
-      <Footer>
-        <Box m="1">
-          <Text size="1" weight="bold">
-            Styles ({styles.length})
-          </Text>
-        </Box>
-        {styles.slice(0, 3).map((style) => (
-          <FooterBadge key={`${family}:${style}`}>{style}</FooterBadge>
-        ))}
-        {/* {styles.total > styles.items.length && <FooterBadge>...</FooterBadge>} */}
-      </Footer>
-    </Container>
+    <IconContainer $isInstalled={installed}>
+      {installed ? <CircleFilledIcon /> : <CircleIcon />}
+    </IconContainer>
+  )
+}
+
+const applyViewTransition = (name: string, ref?: RefObject<HTMLElement>) => {
+  if (ref && ref.current) {
+    ref.current.style.viewTransitionName = name
+  }
+
+  return function applyViewTransitionCleanup() {
+    if (ref && ref.current) {
+      ref.current.style.viewTransitionName = ''
+    }
+  }
+}
+
+export default function Card({
+  data,
+  height,
+  isVisible = false,
+  ...props
+}: CardProps) {
+  const [{ previewText, previewFontSize }] = useAppState()
+  const styles = data.fonts.map((f) => f.style)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
+
+  // In this specific case, by intercepting the event in the
+  // `AnimatedLink` component, we can return a function to
+  // the Click event that will run after the transition
+  // begins, but before the DOM updates, which is what
+  // allows the whole thing to work.
+  const handleLinkClick = useCallback((e: MouseEvent) => {
+    e.preventDefault()
+
+    const clean = [
+      applyViewTransition('card', containerRef),
+      applyViewTransition('heading', headingRef),
+      applyViewTransition('preview', previewRef),
+    ]
+
+    return function linkClickCleanup() {
+      clean.map((c) => c())
+    }
+  }, [])
+
+  return (
+    <ContextMenu content={contextMenuItems}>
+      <Container {...props} ref={containerRef} $height={height}>
+        {isVisible && (
+          <Fragment>
+            <Flex justify="between" gap="1">
+              <Header asChild ref={headingRef}>
+                <AnimatedLink
+                  to={`family/${data.name}`}
+                  onClick={handleLinkClick}>
+                  {data.name}
+                </AnimatedLink>
+              </Header>
+              <InstalledIcon family={data} />
+            </Flex>
+            <Preview
+              id={data.fonts.at(0)?.id}
+              name={data.fonts.at(0)?.fullName}
+              size={previewFontSize}
+              ref={previewRef}>
+              {previewText}
+            </Preview>
+            <Footer>
+              {styles.slice(0, 4).map((style) => (
+                <FooterBadge key={`${data}:${style}`}>{style}</FooterBadge>
+              ))}
+              {styles.length > 4 && (
+                <FooterBadge>+{styles.length - 4}</FooterBadge>
+              )}
+            </Footer>
+          </Fragment>
+        )}
+      </Container>
+    </ContextMenu>
   )
 }

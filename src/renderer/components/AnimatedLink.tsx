@@ -1,28 +1,38 @@
-import { HTMLAttributes, Ref, forwardRef, useCallback } from 'react'
-import { flushSync } from 'react-dom'
-import { LinkProps, useNavigate } from 'react-router-dom'
+import { HTMLAttributes, Ref, forwardRef } from 'react'
+import { LinkProps } from 'react-router-dom'
+import useAnimatedNavigate from '~/hooks/useAnimatedNavigate'
 
-type AnimatedLinkProps = LinkProps & HTMLAttributes<HTMLAnchorElement>
+type AnimatedLinkProps = Omit<
+  LinkProps & HTMLAttributes<HTMLAnchorElement>,
+  'onClick'
+> & {
+  onClick?: (
+    ev: React.MouseEvent<HTMLAnchorElement>
+  ) => void | Promise<void> | (() => void | Promise<void>)
+}
 
 function AnimatedLink(
-  { to, children, ...props }: AnimatedLinkProps,
+  { to, children, onClick, ...props }: AnimatedLinkProps,
   ref: Ref<HTMLAnchorElement>
 ) {
-  const navigate = useNavigate()
+  const navigate = useAnimatedNavigate()
 
   return (
     <a
       href={to.toString()}
       ref={ref}
       {...props}
-      onClick={(ev) => {
+      onClick={async (ev) => {
         ev.preventDefault()
+        let off = () => {}
 
-        document.startViewTransition(() => {
-          flushSync(() => {
-            navigate(to)
-          })
-        })
+        if (onClick) {
+          const ret = await onClick(ev)
+
+          if (ret) off = ret
+        }
+
+        navigate(to, off)
       }}>
       {children}
     </a>
@@ -30,16 +40,3 @@ function AnimatedLink(
 }
 
 export default forwardRef(AnimatedLink)
-
-export function useAnimatedNavigate() {
-  const navigate = useNavigate()
-
-  return useCallback(
-    (path: string) => {
-      document.startViewTransition(() => {
-        flushSync(() => navigate(path))
-      })
-    },
-    [navigate]
-  )
-}

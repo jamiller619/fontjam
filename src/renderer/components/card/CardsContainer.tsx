@@ -7,8 +7,9 @@ type CardsContainerProps = HTMLAttributes<HTMLDivElement> & {
   children?: ReactNode
 }
 
-const GridContainer = styled(Flex)`
-  flex-wrap: wrap;
+const GridContainer = styled('div')`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--space-3);
 `
 

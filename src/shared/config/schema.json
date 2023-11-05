@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "ConfigSchema",
+  "type": "object",
+  "required": ["install.location"],
+  "additionalProperties": false,
+  "properties": {
+    "install.location": {
+      "type": "string",
+      "enum": ["user", "system"]
+    }
+  }
+}

@@ -4,23 +4,15 @@ type AppState = {
   previewText: string
   previewFontSize: number
   view: 'grid' | 'list'
+  isSidebarOpen: boolean
 }
 
-const defaultAppState = {
+const defaultAppState: AppState = {
   previewText: 'The quick brown fox jumps over the lazy dog',
   previewFontSize: 18,
   view: 'grid',
-} as const
-
-// const pick = <T extends object, K extends keyof T>(obj: T, ...keys: K[]) => {
-//   const res = {} as Pick<T, K>
-
-//   keys.forEach((key) => {
-//     res[key] = obj[key]
-//   })
-
-//   return res
-// }
+  isSidebarOpen: true,
+}
 
 export default function useAppState() {
   const [state, setState] = useLocalStorage<AppState>(

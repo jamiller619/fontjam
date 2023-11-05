@@ -14,27 +14,40 @@ type ToggleButtonGroupProps = {
 }
 
 const ToggleGroupItem = styled(ToggleGroup.Item)`
-  color: var(--accent-9-contrast);
-  border: none;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  outline: none;
+  border: none;
+  box-shadow: none;
+  /* background: var(--gray-3); */
+  background: transparent;
+  color: var(--gray-10);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--gray-a2);
+    color: var(--gray-12);
+  }
 
   &[data-state='on'] {
-    background-color: var(--accent-9);
+    background-color: var(--gray-a3);
+    color: var(--gray-12);
   }
 
   &:first-child {
-    border-top-left-radius: var(--radius-4);
-    border-bottom-left-radius: var(--radius-4);
+    border-top-left-radius: var(--radius-3);
+    border-bottom-left-radius: var(--radius-3);
   }
 
   &:last-child {
-    border-top-right-radius: var(--radius-4);
-    border-bottom-right-radius: var(--radius-4);
+    border-top-right-radius: var(--radius-3);
+    border-bottom-right-radius: var(--radius-3);
   }
 `
+
+const Root = styled(ToggleGroup.Root)``
 
 export default function ToggleButtonGroup({
   defaultValue,
@@ -42,15 +55,12 @@ export default function ToggleButtonGroup({
   onChange,
 }: ToggleButtonGroupProps) {
   return (
-    <ToggleGroup.Root
-      type="single"
-      defaultValue={defaultValue}
-      onValueChange={onChange}>
+    <Root type="single" defaultValue={defaultValue} onValueChange={onChange}>
       {items.map((item) => (
         <ToggleGroupItem key={item.value} value={item.value}>
           {item.content}
         </ToggleGroupItem>
       ))}
-    </ToggleGroup.Root>
+    </Root>
   )
 }

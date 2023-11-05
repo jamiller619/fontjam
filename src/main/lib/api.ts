@@ -1,7 +1,8 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { API, APIKey } from '@shared/api'
-import font from '~/lib/font'
-import library from '~/lib/library'
+import { CatalogRepository } from '~/catalog'
+import { FontInstaller, FontRepository } from '~/fonts'
+import search from '~/lib/search'
 
 const handle = <K extends APIKey>(
   channel: K,
@@ -22,10 +23,14 @@ const handleSelectDirectory = (win: BrowserWindow) => {
 }
 
 export default {
-  async start(win: BrowserWindow) {
+  async init(win: BrowserWindow) {
     handle('select.directory', handleSelectDirectory(win))
-    handle('get.libraries', library.getAllLibraries.bind(library))
-    handle('get.fonts', font.getFamilies.bind(font))
-    handle('add.library', library.addLibrary.bind(library))
+    handle('get.libraries', CatalogRepository.getAllLibraries)
+    handle('get.collections', CatalogRepository.getAllCollections)
+    handle('get.families', FontRepository.getFamilies)
+    handle('get.family', FontRepository.getFamilyByName)
+    handle('add.library', CatalogRepository.createLibrary)
+    handle('search.fonts', search.search)
+    handle('install.fonts', FontInstaller.install)
   },
 }

@@ -1,9 +1,8 @@
 import {
   Grid20Regular as GridIcon,
-  List20Regular as ListIcon,
+  TextBulletList20Regular as ListIcon,
 } from '@fluentui/react-icons'
-import { Flex, Slider, Text } from '@radix-ui/themes'
-import { Fragment } from 'react'
+import { Flex, IconButton, Slider } from '@radix-ui/themes'
 import styled from 'styled-components'
 import {
   Textbox,
@@ -11,19 +10,21 @@ import {
   ToggleButtonGroupItem,
 } from '~/components/input'
 import useAppState from '~/hooks/useAppState'
+import useClassNames from '~/hooks/useClassNames'
 import Search from './Search'
+
+const Container = styled(Flex)`
+  flex-direction: column;
+  justify-content: space-between;
+  padding-bottom: var(--space-3);
+  height: 80px;
+  transition: height 150ms ease-in-out;
+  z-index: 1;
+`
 
 const DragRegion = styled('div')`
   -webkit-app-region: drag;
-  background-color: var(--gray-surface);
   height: 30px;
-`
-
-const Container = styled(Flex)`
-  gap: var(--space-6);
-  padding: var(--space-3);
-  background-color: var(--gray-surface);
-  justify-content: space-between;
 `
 
 const views: ToggleButtonGroupItem[] = [
@@ -58,14 +59,45 @@ const ToolbarSlider = styled(Slider)`
   flex-grow: 1;
 `
 
+const Items = styled(Flex)`
+  align-items: center;
+  justify-content: space-evenly;
+`
+
+const ToolbarIconButton = styled(IconButton).attrs({
+  variant: 'ghost',
+  color: 'gray',
+  radius: 'large',
+  size: '3',
+})`
+  cursor: pointer;
+  color: var(--gray-10);
+  transition: background-color 150ms ease-in-out, color 150ms ease-in-out;
+
+  &:hover,
+  &.active {
+    color: var(--gray-12);
+  }
+
+  &.active {
+    background-color: var(--gray-a2);
+  }
+`
+
+const ToolbarIconButtonContainer = styled(Flex)`
+  gap: var(--space-5);
+`
+
 export default function Toolbar() {
   const [{ previewText, view, previewFontSize }, setAppState] = useAppState()
 
-  const handleViewChange = (value: string) => {
-    setAppState((prev) => ({
-      ...prev,
-      view: value as 'list' | 'grid',
-    }))
+  const handleViewChange = (view: 'grid' | 'list') => {
+    return function handler() {
+      setAppState((prev) => ({
+        ...prev,
+        view,
+      }))
+    }
   }
 
   const handleSizeChange = (value: number) => {
@@ -75,35 +107,61 @@ export default function Toolbar() {
     }))
   }
 
+  const gridClassName = useClassNames({
+    active: view === 'grid',
+  })
+
+  const listClassName = useClassNames({
+    active: view === 'list',
+  })
+
   return (
-    <Fragment>
+    <Container>
       <DragRegion />
-      <Search />
-      <Container>
-        <Section>
-          <Text size="2">Preview:</Text>
-          <PreviewTextbox defaultValue={previewText} />
-        </Section>
-        <Section>
-          <Text size="2">Size:</Text>
-          <ToolbarSlider
-            value={[previewFontSize]}
-            min={8}
-            max={64}
-            size="1"
-            onValueChange={(val) => handleSizeChange(val[0])}
-          />
-          <SizeTextbox
-            value={previewFontSize}
-            onChange={(e) => handleSizeChange(e.target.valueAsNumber)}
-          />
-        </Section>
-        <ToggleButtonGroup
+      <Items>
+        <div />
+        <ToolbarIconButtonContainer>
+          <ToolbarIconButton
+            {...gridClassName}
+            onClick={handleViewChange('grid')}>
+            <GridIcon />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            {...listClassName}
+            onClick={handleViewChange('list')}>
+            <ListIcon />
+          </ToolbarIconButton>
+        </ToolbarIconButtonContainer>
+        <Search />
+        {/* <ToggleButtonGroup
           defaultValue={view}
           items={views}
           onChange={handleViewChange}
+        /> */}
+      </Items>
+      {/* <Section>
+        <Text size="2">Preview:</Text>
+        <PreviewTextbox defaultValue={previewText} />
+      </Section>
+      <Section>
+        <Text size="2">Size:</Text>
+        <ToolbarSlider
+          value={[previewFontSize]}
+          min={8}
+          max={64}
+          size="1"
+          onValueChange={(val) => handleSizeChange(val[0])}
         />
-      </Container>
-    </Fragment>
+        <SizeTextbox
+          value={previewFontSize}
+          onChange={(e) => handleSizeChange(e.target.valueAsNumber)}
+        />
+      </Section>
+      <ToggleButtonGroup
+        defaultValue={view}
+        items={views}
+        onChange={handleViewChange}
+      /> */}
+    </Container>
   )
 }

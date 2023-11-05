@@ -7,17 +7,18 @@ type TextboxProps = ComponentProps<typeof TextField.Input> & {
 }
 
 const Container = styled(TextField.Root)`
+  color: var(--gray-a10);
+
   .rt-TextFieldInput {
-    height: var(--space-7);
-    color: var(--gray-a10);
+    padding-right: var(--space-2);
 
     &:focus {
       color: var(--gray-12);
 
       + .rt-TextFieldChrome {
-        outline: none;
-        background-color: var(--gray-a4);
-        color: var(--gray-12);
+        transition-duration: 0;
+        outline: 2px solid var(--accent-7);
+        background-color: var(--color-background);
       }
     }
   }
@@ -25,8 +26,21 @@ const Container = styled(TextField.Root)`
   .rt-TextFieldChrome {
     background-color: var(--gray-a2);
     box-shadow: none;
-    border-radius: var(--radius-3);
-    transition: background-color 100ms ease-out;
+    transition-duration: 120ms;
+    transition-timing-function: ease-in-out;
+    transition-property: background-color;
+  }
+
+  .rt-TextFieldSlot {
+    gap: 0;
+    padding-right: var(--space-1);
+    color: inherit;
+  }
+
+  &:hover {
+    .rt-TextFieldChrome {
+      background-color: var(--gray-a3);
+    }
   }
 `
 

@@ -1,49 +1,98 @@
-import {
-  Box,
-  Flex,
-  Portal,
-  ScrollArea,
-  Separator,
-  Text,
-} from '@radix-ui/themes'
-import { Fragment, useMemo } from 'react'
+import { Box, Flex, Portal, ScrollArea, Text } from '@radix-ui/themes'
+import { Fragment, useEffect, useState } from 'react'
 import { Outlet, useParams } from 'react-router-dom'
 import styled from 'styled-components'
+import { useIsMounted } from 'usehooks-ts'
 import { Card } from '~/components/card'
-import CardsContainer from '~/components/card/CardsContainer'
 import { Toolbar } from '~/components/toolbar'
+import { useSearch } from '~/components/toolbar/Search'
 import useAPI from '~/hooks/useAPI'
-import useAppState from '~/hooks/useAppState'
-import useLibrary from '~/hooks/useLibrary'
+import useScrollPosition from '~/hooks/useScrollPosition'
+import { fadein } from '~/style/keyframes'
+import NoResults from './NoResults'
 
-const Content = styled(Box)`
-  margin: calc(var(--scale-1) / 2) 0;
+type LibraryProps = {
+  id?: number
+}
+
+const Grid = styled(Box)`
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
 `
 
-const Footer = styled(Flex)`
+const NoResultsContainer = styled(Flex)`
+  flex-direction: column;
   align-items: center;
-  padding: 0 var(--space-3);
-  color: var(--gray-11);
-  height: 35px;
-  background-color: var(--gray-surface);
-  border-top-left-radius: var(--radius-3);
-  justify-content: space-between;
+  justify-content: center;
+  width: 100%;
+  height: 60vh;
+  margin-top: var(--space-5);
+  animation: 150ms 150ms ease-out both ${fadein};
+
+  svg {
+    width: 30vw;
+  }
 `
 
-export default function Library() {
-  const { id } = useParams()
-  const library = useLibrary(Number(id))
-  const [{ view }] = useAppState()
-  const { data } = useAPI('get.fonts', [Number(id), { index: 0, length: 48 }], {
-    refreshWhenHidden: false,
-    revalidateOnFocus: false,
-    revalidateOnMount: false,
-    revalidateIfStale: false,
-  })
+const useLibraryId = (id?: number) => {
+  const params = useParams()
 
-  const fontsLength = useMemo(() => {
-    return data?.records.reduce((acc, curr) => acc + curr.fonts.length, 0)
-  }, [data?.records])
+  return id ?? Number(params.id) ?? 1
+}
+
+const CARD_HEIGHT = 220
+const CARD_WIDTH = 200
+
+export default function Library(props: LibraryProps) {
+  const id = useLibraryId(props.id)
+  const [searchText] = useSearch()
+  const isMounted = useIsMounted()
+  const [ref, scrollY] = useScrollPosition()
+  const [visibleRange, setVisibleRange] = useState([0, 0])
+
+  useEffect(() => {
+    if (!ref.current) return
+
+    const parentNode = ref.current.parentNode as HTMLElement
+
+    if (!parentNode) return
+
+    const visibleRows = Math.ceil(parentNode.clientHeight / CARD_HEIGHT)
+    const visibleColumns = Math.floor(ref.current?.clientWidth / CARD_WIDTH)
+    const visibleRowStartIndex = Math.floor(scrollY / CARD_HEIGHT)
+    const start = visibleRowStartIndex * visibleColumns - visibleColumns
+    const end = start - 1 + visibleRows * visibleColumns + visibleColumns
+
+    setVisibleRange([start, end])
+  }, [ref, scrollY])
+
+  const { data: apiData } = useAPI(
+    'get.families',
+    [Number(id), { index: 0, length: 48 }],
+    {
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+    }
+  )
+
+  const [data, setData] = useState(apiData?.records)
+
+  useEffect(() => {
+    if (searchText) {
+      window.api['search.fonts'](Number(id), searchText)
+        .then((res) => {
+          if (isMounted()) {
+            setData(res.map((r) => r.item))
+          }
+        })
+        .catch(console.error)
+    } else {
+      setData(apiData?.records)
+    }
+  }, [apiData?.records, id, isMounted, searchText])
 
   const el = document.querySelector(
     '[data-is-root-theme="true"]'
@@ -52,29 +101,25 @@ export default function Library() {
   return (
     <Fragment>
       <Toolbar />
-      <ScrollArea type="hover" scrollbars="vertical">
-        <Content>
-          <CardsContainer view={view}>
-            {data?.records.map((family) => (
-              <Card key={family.name} family={family} />
+      <ScrollArea type="hover" scrollbars="vertical" ref={ref}>
+        {data && data.length > 0 ? (
+          <Grid>
+            {data.map((family, i) => (
+              <Card
+                isVisible={i >= visibleRange[0] && i <= visibleRange[1]}
+                key={family.name}
+                data={family}
+                height={CARD_HEIGHT}
+              />
             ))}
-          </CardsContainer>
-        </Content>
+          </Grid>
+        ) : (
+          <NoResultsContainer>
+            <Text size="3">No results!</Text>
+            <NoResults />
+          </NoResultsContainer>
+        )}
       </ScrollArea>
-      <Footer>
-        <Text size="1">
-          <strong>{fontsLength} fonts</strong> in{' '}
-          <strong>{data?.total} families</strong>
-        </Text>
-        <Text size="1" align="right">
-          <Flex align="center" gap="2">
-            <span>
-              Library <strong>{library?.name}</strong>
-            </span>
-            <Separator orientation="vertical" /> {library?.path}
-          </Flex>
-        </Text>
-      </Footer>
       <Portal container={el}>
         <Outlet />
       </Portal>

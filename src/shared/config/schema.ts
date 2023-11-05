@@ -5,16 +5,6 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-/**
- * The directory where Fontjam stores font libraries.
- */
-export type FontLibraryDirectory = string;
-/**
- * Directory where databases files are saved.
- */
-export type DatabaseDirectory = string;
-
 export interface ConfigSchema {
-  "library.url": FontLibraryDirectory;
-  "db.url": DatabaseDirectory;
+  "install.location": "user" | "system";
 }

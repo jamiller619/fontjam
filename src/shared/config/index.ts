@@ -1,4 +1,4 @@
-import type { json } from './schema'
+import type json from './schema.json'
 
 export * from './schema'
 

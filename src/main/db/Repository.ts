@@ -25,10 +25,12 @@ export default class Repository<T extends Base> {
 
   query: Database<T>['query']
   queryMany: Database<T>['queryMany']
+  run: Database<T>['runAsync']
+  stream: Database<T>['stream']
 
   ready: Promise<void>
 
-  constructor(table: 'libraries' | 'fonts', schema: string) {
+  constructor(table: string, schema: string) {
     this.#table = table
     this.db = connect<T>(fileName, () => {
       log.info(`Initialized ${table} repository`)
@@ -36,6 +38,8 @@ export default class Repository<T extends Base> {
 
     this.query = this.db.query.bind(this.db)
     this.queryMany = this.db.queryMany.bind(this.db)
+    this.run = this.db.runAsync.bind(this.db)
+    this.stream = this.db.stream.bind(this.db)
 
     this.ready = this.query(
       sql`CREATE TABLE IF NOT EXISTS ${this.#table} (${schema})`
@@ -57,6 +61,24 @@ export default class Repository<T extends Base> {
     }
   }
 
+  async insertMany(data: WithoutId<T>[]) {
+    const cols = Object.keys(data[0])
+
+    const stmt = sql`
+      BEGIN TRANSACTION;
+
+      ${data.map((d) => {
+        const vals = Object.values(d)
+
+        return sql`INSERT INTO ${this.#table} (${cols}) VALUES (${vals})`
+      })}
+
+      COMMIT;
+    `
+
+    await this.db.runAsync(stmt)
+  }
+
   async insert(data: WithoutId<T>) {
     const cols = Object.keys(data)
     const vals = Object.values(data)
@@ -71,22 +93,32 @@ export default class Repository<T extends Base> {
     }
   }
 
-  get(id: number) {
-    return this.query(sql`SELECT * FROM ${this.#table} WHERE id = ${id}`)
+  findById(id: number) {
+    return this.query<T | undefined>(
+      sql`SELECT * FROM ${this.#table} WHERE id = ${id}`
+    )
   }
 
   find<K extends keyof T>(col: K, value: T[K]) {
-    return this.query(sql`SELECT * FROM ${this.#table} WHERE ${col} = ${value}`)
-  }
-
-  findAll<K extends keyof T>(col: K, value: T[K]) {
-    return this.queryMany(
+    return this.query<T | undefined>(
       sql`SELECT * FROM ${this.#table} WHERE ${col} = ${value}`
     )
   }
 
-  remove(id: number) {
-    return this.query(sql`DELETE FROM ${this.#table} WHERE id = ${id}`)
+  findAll<K extends keyof T>(col: K, value: T[K]) {
+    return this.queryMany<T | undefined>(
+      sql`SELECT * FROM ${this.#table} WHERE ${col} = ${value}`
+    )
+  }
+
+  async update(id: number, data: Partial<T>) {
+    const set = Object.entries(data).map(([k, v]) => `${k} = ${v}`)
+
+    return this.run(sql`UPDATE ${this.#table} SET ${set} WHERE id = ${id}`)
+  }
+
+  async remove(id: number) {
+    await this.query(sql`DELETE FROM ${this.#table} WHERE id = ${id}`)
   }
 
   async search(col: keyof T, query: string) {

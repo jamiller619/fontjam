@@ -1,11 +1,11 @@
 import FontBase from './Font'
 
-type Font = Pick<FontBase, 'id' | 'style' | 'postscriptName' | 'path'>
+export type FamilyFont = Omit<FontBase, 'libraryId' | 'family'>
 
 type Family = {
   libraryId: number
   name: string
-  fonts: Font[]
+  fonts: FamilyFont[]
 }
 
 export default Family

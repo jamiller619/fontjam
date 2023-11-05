@@ -1,17 +1,17 @@
 import { Flex } from '@radix-ui/themes'
 import { Outlet } from 'react-router-dom'
 import styled from 'styled-components'
+import Footer from './Footer'
 import Menu from './Menu'
 
 const Container = styled(Flex)`
-  gap: var(--space-2);
   height: 100vh;
-  overflow: hidden;
 `
 
 const OutletContainer = styled(Flex)`
   flex-grow: 1;
   flex-direction: column;
+  overflow: hidden;
 `
 
 export default function Layout() {
@@ -21,6 +21,7 @@ export default function Layout() {
       <OutletContainer>
         <Outlet />
       </OutletContainer>
+      {/* <Footer /> */}
     </Container>
   )
 }

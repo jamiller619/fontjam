@@ -1,3 +1,5 @@
+import { type radixColorScales } from '@radix-ui/themes'
+
 type IconName = keyof typeof import('@fluentui/react-icons')
 
 type Icon = Exclude<
@@ -20,9 +22,11 @@ type Library = {
   id: number
   createdAt: number
   name: string
-  isEditable: 0 | 1
-  icon: Icon
   path: string
+  isEditable: 0 | 1
+
+  icon: Icon
+  color: (typeof radixColorScales)[number] | 'accent' | 'gray'
 }
 
 export default Library

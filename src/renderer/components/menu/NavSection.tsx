@@ -1,9 +1,8 @@
-import { Heading } from '@radix-ui/themes'
-import { ReactNode, useRef } from 'react'
+import { Box, Flex, Heading, Separator } from '@radix-ui/themes'
+import { Fragment, ReactNode, useRef } from 'react'
 import { styled } from 'styled-components'
-import { useHover } from 'usehooks-ts'
-import usePress from '~/hooks/usePress'
-import NavItem from './NavItem'
+import useAppState from '~/hooks/useAppState'
+import { fadein } from '~/style/keyframes'
 
 type NavSectionProps = {
   children?: ReactNode
@@ -12,6 +11,21 @@ type NavSectionProps = {
     plural: string
   }
 }
+
+const Container = styled(Flex)`
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: 18px;
+`
+
+const Label = styled(Heading).attrs({
+  size: '1',
+})`
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--gray-8);
+`
 
 const Navlist = styled('ol')`
   list-style: none;
@@ -22,47 +36,29 @@ const Navlist = styled('ol')`
   gap: var(--space-1);
 `
 
-const Label = styled(Heading).attrs({
-  size: '1',
-})`
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--gray-10);
-  margin: var(--space-3) var(--space-3) var(--space-2) var(--space-3);
-`
-
-const ListItem = styled('li')`
-  display: flex;
+const Header = styled(Flex)`
   align-items: center;
-  justify-content: space-between;
-`
+  margin: 0 10px;
+  height: 16px;
 
-const AddItem = styled(NavItem)<{ $isVisible: boolean }>`
-  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
-  transition: opacity 0.2s ease-in-out;
-  color: var(--gray-11);
-
-  &:hover {
-    color: var(--gray-12);
+  .rt-Separator {
+    margin: 0 auto;
+    height: 2px;
+    width: 100%;
+    animation: 200ms ease-out 100ms both ${fadein};
   }
 `
 
 export default function NavSection({ children, label }: NavSectionProps) {
   const ref = useRef(null)
-  const isHovered = useHover(ref)
+  const [{ isSidebarOpen }] = useAppState()
 
   return (
-    <Navlist ref={ref}>
-      <ListItem>
-        <Label>{label.plural}</Label>
-      </ListItem>
-      {children}
-      <AddItem
-        $isVisible={isHovered}
-        href={`/add/${label.singular}`.toLowerCase()}
-        icon="Add12Filled"
-        label={`Add ${label.singular}`}
-      />
-    </Navlist>
+    <Container>
+      <Header>
+        {isSidebarOpen ? <Label>{label.plural}</Label> : <Separator />}
+      </Header>
+      <Navlist ref={ref}>{children}</Navlist>
+    </Container>
   )
 }

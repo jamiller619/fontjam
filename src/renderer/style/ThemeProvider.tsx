@@ -9,7 +9,7 @@ type ThemeProviderProps = {
 
 export default function ThemeProvider({ children }: ThemeProviderProps) {
   return (
-    <Theme appearance="dark" grayColor="mauve" accentColor="ruby" radius="full">
+    <Theme appearance="dark" grayColor="slate" accentColor="ruby" radius="full">
       {children}
     </Theme>
   )

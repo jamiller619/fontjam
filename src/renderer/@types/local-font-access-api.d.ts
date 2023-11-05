@@ -1,5 +1,3 @@
-import { Font } from '@shared/types'
-
 declare global {
   interface Window {
     queryLocalFonts: (options?: QueryLocalFontOptions) => Promise<FontData[]>
@@ -9,7 +7,11 @@ declare global {
     postscriptNames?: string[]
   }
 
-  type FontData = Omit<Font, 'id' | 'libraryId' | 'path'> & {
+  type FontData = {
+    family: string
+    fullName: string
+    postscriptName: string
+    style: string
     blob(): Promise<Blob>
   }
 }
