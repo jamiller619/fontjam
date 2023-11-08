@@ -22,24 +22,20 @@ const StyledSearch = styled(Search)`
   -webkit-app-region: no-drag;
 `
 
-const Container = styled(Flex)<{ $isCollapsed: boolean }>`
+const Container = styled(Flex)`
   flex-direction: column;
   justify-content: space-between;
-  transition: height 150ms ease-in-out;
   z-index: 1;
-  padding: var(--space-3);
   -webkit-app-region: drag;
-
-  ${Controls} {
-    height: 40px;
-  }
+  background: var(--gray-a1);
+  backdrop-filter: blur(10px);
 `
 
 const ToolbarIconButton = styled(IconButton).attrs({
   variant: 'ghost',
   color: 'gray',
   radius: 'large',
-  size: '3',
+  size: '2',
 })`
   -webkit-app-region: no-drag;
   ${control.style}
@@ -82,7 +78,7 @@ export default function Toolbar(props: ToolbarProps) {
   })
 
   return (
-    <Container {...props} $isCollapsed={state['toolbar.collapsed']}>
+    <Container {...props}>
       <Controls>
         <StyledSearch />
         <ToolbarIconButtonContainer>

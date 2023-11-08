@@ -31,10 +31,6 @@ const NoResultsContainer = styled(Flex)`
   }
 `
 
-const StyledToolbar = styled(Toolbar)`
-  padding-bottom: var(--space-3);
-`
-
 type State = {
   [catalogId: number]: {
     [page: number]: Family[]
@@ -46,7 +42,6 @@ export default function Catalog(props: LibraryProps) {
   const [families, id] = useFamilies(page, 48, props.id)
   const [data, setData] = useState<State>({ [id]: {} })
   const { ref, inView } = useInView()
-  const [state] = useAppState()
 
   useEffect(() => {
     if (families?.length && data[id]?.[page] == null) {
@@ -90,7 +85,7 @@ export default function Catalog(props: LibraryProps) {
 
   return (
     <Fragment>
-      <StyledToolbar />
+      <Toolbar />
       {Object.keys(data[id] ?? {}).length > 0 ? (
         <Grid data={Object.values(data[id]).flat()}>
           <div ref={ref} />

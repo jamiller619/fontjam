@@ -10,15 +10,12 @@ type SearchProps = HTMLAttributes<HTMLDivElement>
 const Container = styled(Flex)`
   align-items: center;
   justify-content: center;
-  transform: scale(1);
-  /* transition: transform 130ms cubic-bezier(1, 0, 0.5, 1),
-    box-shadow 130ms ease-in-out; */
   border-radius: var(--radius-4);
 `
 
 const Searchbox = styled(Textbox).attrs({
   type: 'search',
-  size: '3',
+  size: '2',
 })`
   width: 350px;
 `
