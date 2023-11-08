@@ -8,20 +8,23 @@ import {
   HTMLAttributes,
   MouseEvent,
   RefObject,
+  forwardRef,
   useCallback,
+  useImperativeHandle,
   useRef,
 } from 'react'
 import { css, styled } from 'styled-components'
 import { Family } from '@shared/types'
 import AnimatedLink from '~/components/AnimatedLink'
 import ContextMenu, { ContextMenuItem } from '~/components/ContextMenu'
-import Preview from '~/components/Preview'
+import { Preview } from '~/components/preview'
 import useAppState from '~/hooks/useAppState'
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
   data: Family
   isVisible: boolean
   height: number
+  view: 'grid' | 'list'
 }
 
 const Header = styled(Heading).attrs({
@@ -33,21 +36,25 @@ const Header = styled(Heading).attrs({
   text-decoration: none;
 `
 
-const Container = styled(Flex)<{ $height: number }>`
+const Container = styled(Flex)<{ $height: number; $view: string }>`
   min-height: ${({ $height }) => $height}px;
   padding: var(--space-4) var(--space-3);
-  border-radius: var(--radius-6);
+  border-radius: ${({ $view }) =>
+    $view === 'grid' ? 'var(--radius-6)' : 'var(--radius-3)'};
   background-color: var(--gray-a2);
   flex-direction: column;
   color: var(--gray-9);
   transition-duration: 120ms;
   transition-timing-function: ease-in-out;
-  transition-property: background-color, color, transform, box-shadow;
+  transition-property: background-color, color, transform, box-shadow,
+    border-radius;
+  box-shadow: none;
 
   &:hover {
     background-color: var(--gray-a3);
     color: var(--gray-12);
-    transform: scale(1.04);
+    transform: ${({ $view }) =>
+      $view === 'grid' ? 'scale(1.03)' : 'translateY(-1px)'};
     box-shadow: 0 3px 30px 5px var(--black-a3);
 
     ${Header} {
@@ -119,17 +126,19 @@ const applyViewTransition = (name: string, ref?: RefObject<HTMLElement>) => {
   }
 }
 
-export default function Card({
-  data,
-  height,
-  isVisible = false,
-  ...props
-}: CardProps) {
-  const [{ previewText, previewFontSize }] = useAppState()
+export default forwardRef<HTMLDivElement, CardProps>(function Card(
+  { data, height, view, isVisible = false, ...props },
+  ref
+) {
+  const [state] = useAppState()
   const styles = data.fonts.map((f) => f.style)
   const containerRef = useRef<HTMLDivElement>(null)
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  const previewRef = useRef<HTMLDivElement>(null)
+  // const headingRef = useRef<HTMLHeadingElement>(null)
+  // const previewRef = useRef<HTMLDivElement>(null)
+
+  useImperativeHandle(ref, () => containerRef.current as HTMLDivElement, [
+    containerRef,
+  ])
 
   // In this specific case, by intercepting the event in the
   // `AnimatedLink` component, we can return a function to
@@ -141,8 +150,8 @@ export default function Card({
 
     const clean = [
       applyViewTransition('card', containerRef),
-      applyViewTransition('heading', headingRef),
-      applyViewTransition('preview', previewRef),
+      // applyViewTransition('heading', headingRef),
+      // applyViewTransition('preview', previewRef),
     ]
 
     return function linkClickCleanup() {
@@ -152,11 +161,11 @@ export default function Card({
 
   return (
     <ContextMenu content={contextMenuItems}>
-      <Container {...props} ref={containerRef} $height={height}>
+      <Container {...props} ref={containerRef} $view={view} $height={height}>
         {isVisible && (
           <Fragment>
             <Flex justify="between" gap="1">
-              <Header asChild ref={headingRef}>
+              <Header asChild>
                 <AnimatedLink
                   to={`family/${data.name}`}
                   onClick={handleLinkClick}>
@@ -168,13 +177,14 @@ export default function Card({
             <Preview
               id={data.fonts.at(0)?.id}
               name={data.fonts.at(0)?.fullName}
-              size={previewFontSize}
-              ref={previewRef}>
-              {previewText}
+              size={state['preview.size']}>
+              {state['preview.text']}
             </Preview>
             <Footer>
-              {styles.slice(0, 4).map((style) => (
-                <FooterBadge key={`${data}:${style}`}>{style}</FooterBadge>
+              {styles.slice(0, 4).map((style, i) => (
+                <FooterBadge key={`${i}:${data.name}:${style}`}>
+                  {style}
+                </FooterBadge>
               ))}
               {styles.length > 4 && (
                 <FooterBadge>+{styles.length - 4}</FooterBadge>
@@ -185,4 +195,4 @@ export default function Card({
       </Container>
     </ContextMenu>
   )
-}
+})

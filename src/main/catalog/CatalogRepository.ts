@@ -8,6 +8,7 @@ import {
   Library,
 } from '@shared/types'
 import { Repository } from '~/db'
+import { FontRepository } from '~/fonts'
 import TokenPath from '~/lib/TokenPath'
 import { sql } from '~/lib/sqlite'
 
@@ -101,35 +102,51 @@ async function create<T extends CatalogTypeName>(
   return mapped
 }
 
-export const createCollection = async (
+export async function createCollection(
   data: Omit<Collection, 'createdAt' | 'type' | 'id'>
-) => {
+) {
   await create('collection', data)
 }
 
-export const createLibrary = async (
+export async function createLibrary(
   data: Omit<Library, 'createdAt' | 'type' | 'id'>
-) => {
+) {
   await create('library', data)
 }
 
-export async function addFontsToCollection(
-  collectionId: number,
-  fontIds: number[]
-) {
-  const fonts = fontIds.map((fontId) => ({
-    catalogId: collectionId,
-    fontId,
-  }))
+async function getLibraryStats(id: number) {
+  const families = await FontRepository.countFamilies(id)
+  const fonts = await FontRepository.countFonts(id)
 
-  await CatalogFontsRepository.insertMany(fonts)
+  return {
+    families,
+    fonts,
+  }
 }
 
-export async function removeFontsFromCollection(
-  collectionId: number,
-  fontIds: number[]
-) {
-  await CatalogFontsRepository.query(
-    sql`DELETE FROM collections_fonts WHERE collectionId = ${collectionId} AND fontId IN (${fontIds})`
-  )
+export async function getCatalogStats(id: number, type: CatalogTypeName) {
+  if (type == 'library') {
+    return getLibraryStats(id)
+  }
 }
+
+// export async function addFontsToCollection(
+//   collectionId: number,
+//   fontIds: number[]
+// ) {
+//   const fonts = fontIds.map((fontId) => ({
+//     catalogId: collectionId,
+//     fontId,
+//   }))
+
+//   await CatalogFontsRepository.insertMany(fonts)
+// }
+
+// export async function removeFontsFromCollection(
+//   collectionId: number,
+//   fontIds: number[]
+// ) {
+//   await CatalogFontsRepository.query(
+//     sql`DELETE FROM collections_fonts WHERE collectionId = ${collectionId} AND fontId IN (${fontIds})`
+//   )
+// }

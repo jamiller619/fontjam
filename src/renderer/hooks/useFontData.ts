@@ -1,7 +1,6 @@
 import opentype from 'opentype.js'
 import { useEffect, useState } from 'react'
 import { useIsMounted } from 'usehooks-ts'
-import { FamilyFont } from '@shared/types'
 import slugify from '@shared/utils/slugify'
 
 export function useFontURL(fontId?: number, fontName?: string) {
@@ -43,20 +42,31 @@ export function useFontFace(fontId?: number, fontName?: string) {
   return isLoaded
 }
 
-export default function useFontData(font?: FamilyFont) {
-  const url = useFontURL(font?.id, font?.fullName)
-  const [parsed, setParsed] = useState<opentype.Font | null>()
+const fontDataCache = new Map<string, opentype.Font>()
+
+export default function useFontData(fontId?: number, fontName?: string) {
+  const url = useFontURL(fontId, fontName)
+  const [fontData, setFontData] = useState<opentype.Font | null>(
+    url ? fontDataCache.get(url) ?? null : null
+  )
   const isMounted = useIsMounted()
 
   useEffect(() => {
-    if (!url || parsed) return
+    if (!url) return
 
-    fetch(url).then(async (res) => {
-      const font = opentype.parse(await res.arrayBuffer())
+    if (fontDataCache.has(url)) {
+      setFontData(fontDataCache.get(url)!)
+    } else {
+      fetch(url).then(async (res) => {
+        const font = opentype.parse(await res.arrayBuffer())
 
-      if (isMounted()) setParsed(font)
-    })
-  }, [isMounted, parsed, url])
+        if (isMounted()) {
+          fontDataCache.set(url, font)
+          setFontData(font)
+        }
+      })
+    }
+  }, [isMounted, fontData, url])
 
-  return parsed
+  return fontData
 }

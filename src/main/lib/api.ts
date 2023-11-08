@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
-import { API, APIKey } from '@shared/api'
+import { API, APIKey, WindowControlAction } from '@shared/api'
 import { CatalogRepository } from '~/catalog'
 import { FontInstaller, FontRepository } from '~/fonts'
 import search from '~/lib/search'
@@ -12,13 +12,29 @@ const handle = <K extends APIKey>(
   return ipcMain.handle(channel, (_, ...params) => handler(...params))
 }
 
-const handleSelectDirectory = (win: BrowserWindow) => {
-  return async () => {
+function handleSelectDirectory(win: BrowserWindow) {
+  return async function selectDirectoryHandler() {
     const result = await dialog.showOpenDialog(win, {
       properties: ['openDirectory'],
     })
 
     return result.filePaths.at(0)
+  }
+}
+
+function handleWindow(win: BrowserWindow) {
+  return async function windowHandler(state: WindowControlAction) {
+    if (state === 'minimize') {
+      win.minimize()
+    } else if (state === 'close') {
+      win.close()
+    } else if (state === 'maximize.toggle') {
+      if (win.isMaximized()) {
+        win.unmaximize()
+      } else {
+        win.maximize()
+      }
+    }
   }
 }
 
@@ -31,6 +47,8 @@ export default {
     handle('get.family', FontRepository.getFamilyByName)
     handle('add.library', CatalogRepository.createLibrary)
     handle('search.fonts', search.search)
+    handle('get.stats', CatalogRepository.getCatalogStats)
     handle('install.fonts', FontInstaller.install)
+    handle('window.control', handleWindow(win))
   },
 }

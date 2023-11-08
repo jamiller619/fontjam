@@ -1,13 +1,17 @@
 import { Flex, Heading } from '@radix-ui/themes'
 import { FormEvent, Fragment, MouseEvent, useCallback, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { styled } from 'styled-components'
-import AnimatedLink, { useAnimatedNavigate } from '~/components/AnimatedLink'
+import AnimatedLink from '~/components/AnimatedLink'
 import Backdrop from '~/components/Backdrop'
 import { Button, Textbox } from '~/components/input'
 import useAPI from '~/hooks/useAPI'
+import useAnimatedNavigate from '~/hooks/useAnimatedNavigate'
 import useInputFocus from '~/hooks/useInputFocus'
 import { toTitleCase } from '~/utils/string'
+
+type AddItemProps = {
+  type: 'collection' | 'library'
+}
 
 const Container = styled(Flex)`
   position: fixed;
@@ -51,8 +55,7 @@ const ButtonGroupContainer = styled(Flex)`
   }
 `
 
-export default function AddItem() {
-  const { type } = useParams()
+export default function AddItem({ type }: AddItemProps) {
   const name = toTitleCase(type)
   const ref = useInputFocus()
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
@@ -76,11 +79,16 @@ export default function AddItem() {
       }
 
       await window.api['add.library']({
-        name: ref.current?.value,
+        color: 'gray',
+        createdAt: Date.now(),
+        icon: 'AccessTime20Filled',
+        isEditable: 1,
+        name: ref.current.value,
         path: selectedFolder,
       })
 
       await mutate()
+
       navigate('/')
     },
     [mutate, navigate, ref, selectedFolder]

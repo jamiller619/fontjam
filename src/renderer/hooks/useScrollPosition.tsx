@@ -1,28 +1,25 @@
-import { useCallback, useRef, useState } from 'react'
+import { RefObject, useCallback, useState } from 'react'
 import { useEventListener } from 'usehooks-ts'
 import useThrottle from './useThrottle'
 
 /**
- * Simple hook that will return the scroll position of an
+ * Simple hook that will return the scrolltop of an
  * HTMLElement. DOES NOT work on `window` or `document`!
- * To use the hook, you must set the ref on the element you
- * want to track the scroll position for.
- * The hook returns a tuple with [ref, scrollPositionY]
  */
-export default function useScrollPosition<
-  T extends HTMLElement = HTMLDivElement
->(refQuery?: (ref: T) => HTMLElement | null) {
-  const ref = useRef<T>(null)
+export default function useScrollPosition<T extends HTMLElement>(
+  ref: RefObject<T>,
+  throttleInterval = 100
+) {
   const [value, setValue] = useState(0)
-  const y = useThrottle<number>(value, 200)
+  const y = useThrottle<number>(value, throttleInterval)
 
   const handleScroll = useCallback(() => {
-    const el = refQuery && ref.current ? refQuery(ref.current) : ref.current
+    if (!ref.current) return
 
-    setValue(el?.scrollTop ?? 0)
-  }, [refQuery])
+    setValue(ref.current.scrollTop)
+  }, [ref])
 
   useEventListener('scroll', handleScroll, ref)
 
-  return [ref, y] as const
+  return y
 }

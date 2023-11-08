@@ -18,20 +18,16 @@ export default class MainWindow extends BrowserWindow {
       width: 1200,
       frame: false,
       show: false,
-      // backgroundColor: '#1c1c1c',
       titleBarStyle: 'hidden',
+
+      // The following settings enable the "mica" appearance
+      // on Windows, which is quite nice, but is currently
+      // riddled with bugs on the electron side.
+      // https://github.com/electron/electron/issues/39959
+      // transparent: true,
       // backgroundMaterial: 'mica',
-      titleBarOverlay: {
-        color: '#1c1c1c',
-        symbolColor: '#fff',
-      },
+
       webPreferences: {
-        /**
-         * !! important !!
-         * This is ONLY disabled in development mode, to allow
-         * the loading of images from the dev server.
-         */
-        // webSecurity: IS_DEV ? false : true,
         preload: path.join(__dirname, 'preload.js'),
       },
     })

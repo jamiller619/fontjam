@@ -127,23 +127,39 @@ export async function getFamilyByName(libraryId: number, familyName: string) {
   return mapFontsToFamily(results)
 }
 
-export async function getFamilies(libraryId: number, page: Page) {
-  const query = getFamilyQuery(libraryId, page)
+export async function countFonts(libraryId: number) {
+  const countFontsQuery = sql`
+    SELECT COUNT(*) as total
+    FROM fonts
+    WHERE libraryId = ${libraryId}
+  `
 
-  const totalQuery = sql`
+  const result = await repo.query<{ total: number }>(countFontsQuery)
+
+  return result.total
+}
+
+export async function countFamilies(libraryId: number) {
+  const countFamiliesQuery = sql`
     SELECT COUNT(*) as total
     FROM fonts
     WHERE libraryId = ${libraryId}
     GROUP BY family
   `
 
-  const total = (await repo.queryMany<{ total: number }>(totalQuery)).length
+  const result = await repo.queryMany<{ total: number }>(countFamiliesQuery)
 
+  return result.length
+}
+
+export async function getFamilies(libraryId: number, page: Page) {
+  const query = getFamilyQuery(libraryId, page)
+  const total = await countFamilies(libraryId)
   const records = await repo.queryMany<FamilyQueryResponse>(query)
 
   const response: Paged<Family> = {
     index: page.index,
-    length: page.length,
+    length: records.length,
     records: records.map(mapFamily(libraryId)),
     total,
   }

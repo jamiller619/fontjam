@@ -12,7 +12,7 @@ export const filters = {
     return sql`ORDER BY ${sort.col} ${sort.dir}`
   },
   page(page: Page) {
-    return sql`LIMIT ${page.index}, ${page.length}`
+    return sql`LIMIT ${page.index * page.length}, ${page.length}`
   },
 }
 

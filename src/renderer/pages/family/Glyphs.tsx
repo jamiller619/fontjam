@@ -1,5 +1,5 @@
 import { Flex, Text } from '@radix-ui/themes'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import styled from 'styled-components'
 
 type GlyphsProps = {
@@ -37,7 +37,7 @@ type CanvasDrawingOptions = {
   path?: () => opentype.Path | undefined
 }
 
-export function useDrawPath({ height, width, path }: CanvasDrawingOptions) {
+function useDrawPath({ height, width, path }: CanvasDrawingOptions) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -85,9 +85,9 @@ const Container = styled(Flex)`
 `
 
 export default function Glyphs({ data }: GlyphsProps) {
-  const loop = useMemo(() => {
-    return new Array(Math.min(100, data?.glyphs.length ?? 0)).fill(undefined)
-  }, [data?.glyphs.length])
+  const loop = new Array(Math.min(100, data?.glyphs.length ?? 0)).fill(
+    undefined
+  )
 
   return (
     <Container>

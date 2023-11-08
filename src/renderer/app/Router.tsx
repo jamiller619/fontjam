@@ -5,11 +5,10 @@ import {
   createBrowserRouter,
   useNavigate,
 } from 'react-router-dom'
+import { Layout } from '~/components/layout'
 import { AddItem } from '~/pages/add'
+import { Catalog } from '~/pages/catalog'
 import { Family } from '~/pages/family'
-import { Home } from '~/pages/home'
-import { Library } from '~/pages/library'
-import Layout from './Layout'
 
 const HomeRouter = () => {
   const navigate = useNavigate()
@@ -32,28 +31,22 @@ const routes: RouteObject[] = [
       },
       {
         path: '/library/:id',
-        element: <Library />,
+        element: <Catalog />,
         children: [
           {
-            path: '/library/:id/family/:name',
+            path: 'family/:name',
             element: <Family />,
+          },
+          {
+            path: 'add/library',
+            element: <AddItem type="library" />,
+          },
+          {
+            path: 'add/collection',
+            element: <AddItem type="collection" />,
           },
         ],
       },
-      // {
-      //   path: '/',
-      //   element: <Home />,
-      //   children: [
-      //     {
-      //       path: '/family/:name',
-      //       element: <Family />,
-      //     },
-      //     {
-      //       path: '/add/:type',
-      //       element: <AddItem />,
-      //     },
-      //   ],
-      // },
     ],
   },
 ]

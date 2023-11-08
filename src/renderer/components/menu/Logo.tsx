@@ -4,7 +4,6 @@ import styled from 'styled-components'
 type LogoProps = SVGAttributes<SVGSVGElement>
 
 const Container = styled('div')`
-  padding: 8px 0 0 12px;
   -webkit-app-region: drag;
 `
 

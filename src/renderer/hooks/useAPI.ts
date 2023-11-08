@@ -13,6 +13,11 @@ const fetcher = async <K extends APIKey, P = Parameters<API[K]>>([
   return results
 }
 
+const defaultConfig: SWRConfiguration = {
+  refreshWhenHidden: false,
+  revalidateOnFocus: false,
+}
+
 export default function useAPI<
   K extends APIKey,
   P = Parameters<API[K]>,
@@ -21,7 +26,7 @@ export default function useAPI<
   const { data, error, mutate } = useSWR<R, Error>(
     [key, params],
     fetcher as ([key, params]: [K, P]) => R,
-    config
+    { ...defaultConfig, ...config }
   )
 
   const isLoading = !data && !error

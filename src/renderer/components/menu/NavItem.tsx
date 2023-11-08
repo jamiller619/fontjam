@@ -1,62 +1,54 @@
-import { Tooltip } from '@radix-ui/themes'
+import { Text } from '@radix-ui/themes'
 import { HTMLAttributes, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import styled from 'styled-components'
-import { Catalog } from '@shared/types'
 import AnimatedLink from '~/components/AnimatedLink'
-import useAppState from '~/hooks/useAppState'
 import useClassNames from '~/hooks/useClassNames'
 import usePress from '~/hooks/usePress'
+import { control } from '~/style/theme'
 import CustomIcon from './CustomIcon'
 
 type NavItemProps = HTMLAttributes<HTMLLIElement> & {
   label: string
   icon: string
   href: string
-  color: Catalog['color']
 }
 
-const Container = styled('li')`
-  height: 46px;
+const Label = styled(Text)`
+  position: absolute;
+  left: 39px;
+  top: 12px;
+  width: 150px;
 `
-
-const Icon = styled(CustomIcon)``
 
 const Link = styled(AnimatedLink)`
   display: flex;
   align-items: center;
   gap: var(--space-2);
   border-radius: var(--radius-4);
-  color: var(--gray-10);
   text-decoration: none;
   font-size: var(--font-size-2);
-  transition: background-color 100ms ease-in-out;
-  padding: 12px 0 12px 13px;
+
+  height: 46px;
+  padding: 0 13px;
+  position: relative;
+
+  ${control.style}
 
   &.active {
-    background-color: var(--gray-a2);
-    color: var(--gray-12);
+    ${control.active}
   }
 
-  &.pressed {
-    background-color: var(--gray-a2);
-    color: var(--gray-12);
+  &.pressed:not(.active) {
+    ${control.pressed}
   }
 
   &:hover:not(.active):not(.pressed) {
-    background-color: var(--gray-a4);
-    color: var(--gray-11);
+    ${control.hover}
   }
 `
 
-export default function NavItem({
-  label,
-  icon,
-  href,
-  color,
-  ...props
-}: NavItemProps) {
-  const [{ isSidebarOpen }] = useAppState()
+export default function NavItem({ label, icon, href, ...props }: NavItemProps) {
   const location = useLocation()
   const ref = useRef<HTMLAnchorElement>(null)
   const isPressed = usePress(ref)
@@ -66,13 +58,11 @@ export default function NavItem({
   })
 
   return (
-    <Container {...props}>
-      <Tooltip content={!isSidebarOpen && `${label}`} side="right">
-        <Link to={href} {...classNames} ref={ref}>
-          <Icon name={icon} />
-          {isSidebarOpen && label}
-        </Link>
-      </Tooltip>
-    </Container>
+    <li {...props}>
+      <Link to={href} {...classNames} ref={ref}>
+        <CustomIcon name={icon} />
+        <Label className="navItemLinkLabel">{label}</Label>
+      </Link>
+    </li>
   )
 }

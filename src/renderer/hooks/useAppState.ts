@@ -1,17 +1,21 @@
 import { useLocalStorage } from 'usehooks-ts'
 
 type AppState = {
-  previewText: string
-  previewFontSize: number
-  view: 'grid' | 'list'
-  isSidebarOpen: boolean
+  'preview.text': string
+  'preview.size': number
+  'sidebar.open': boolean
+  'catalog.active.id': number | null
+  'catalog.filters.view': 'grid' | 'list'
+  'toolbar.collapsed': boolean
 }
 
 const defaultAppState: AppState = {
-  previewText: 'The quick brown fox jumps over the lazy dog',
-  previewFontSize: 18,
-  view: 'grid',
-  isSidebarOpen: true,
+  'preview.text': 'The quick brown fox jumps over the lazy dog',
+  'preview.size': 18,
+  'sidebar.open': true,
+  'catalog.active.id': null,
+  'catalog.filters.view': 'grid',
+  'toolbar.collapsed': false,
 }
 
 export default function useAppState() {

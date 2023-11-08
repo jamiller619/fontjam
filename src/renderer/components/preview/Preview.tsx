@@ -1,24 +1,26 @@
 import { Box } from '@radix-ui/themes'
-import { ForwardedRef, forwardRef, useImperativeHandle, useRef } from 'react'
-import { css, styled } from 'styled-components'
+import {
+  ForwardedRef,
+  HTMLAttributes,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+} from 'react'
+import { styled } from 'styled-components'
 import { useFontFace } from '~/hooks/useFontData'
 
-type PreviewProps = {
+type PreviewProps = Omit<HTMLAttributes<HTMLDivElement>, 'id'> & {
   id?: number
   name?: string
   size?: number
   children?: string
 }
 
-const Container = styled(Box)<{ $fontSrc?: string; $size?: number }>`
+const Container = styled(Box)<{ $name?: string; $size?: number }>`
   flex-grow: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  ${({ $fontSrc }) =>
-    $fontSrc &&
-    css`
-      font-family: '${$fontSrc}';
-    `}
+  font-family: '${({ $name }) => $name}';
   font-size: ${({ $size }) => $size}px;
 `
 
@@ -35,7 +37,7 @@ export default forwardRef(function Preview(
   ])
 
   return isLoaded && name ? (
-    <Container {...restProps} $fontSrc={name} $size={size} ref={innerRef}>
+    <Container {...restProps} $name={name} $size={size} ref={innerRef}>
       {props.children}
     </Container>
   ) : null

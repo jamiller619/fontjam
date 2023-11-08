@@ -2,47 +2,42 @@ import {
   ChevronLeft20Filled as CollapseIcon,
   Navigation20Filled as ExpandIcon,
 } from '@fluentui/react-icons'
-import { Box, Flex } from '@radix-ui/themes'
+import { Flex, IconButton } from '@radix-ui/themes'
 import styled from 'styled-components'
 import { Logo, NavItem, NavSection } from '~/components/menu'
 import useAppState from '~/hooks/useAppState'
 import { useCollections, useLibraries } from '~/hooks/useCatalog'
+import * as SidebarAnimation from './SidebarAnimation'
 
-const libraryLabel = {
-  singular: 'Library',
-  plural: 'Libraries',
-}
-
-const collectionsLabel = {
-  singular: 'Collection',
-  plural: 'Collections',
-}
-
-const Container = styled(Flex)<{ $width: number }>`
+const Container = styled(Flex)<{ $isOpen: boolean }>`
   flex-direction: column;
   gap: var(--space-3);
   background-color: var(--gray-surface);
   padding: var(--space-3);
   color: var(--gray-11);
-  /* position: relative; */
-  width: 70px; // This prevents the nav from jumping around in layout when the app loads
-  min-width: ${({ $width }) => $width}px;
-  transition: min-width 200ms cubic-bezier(1, 0, 0.5, 1);
   font-weight: 500;
+  overflow: hidden;
+  border-right: var(--default-border);
+
+  ${({ $isOpen }) => SidebarAnimation.Container($isOpen)}
 `
 
-const ToggleButton = styled(Box)`
+const Nav = styled('nav')`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`
+
+const ToggleButton = styled(IconButton).attrs({
+  color: 'gray',
+  variant: 'ghost',
+  size: '4',
+})`
   display: inline-flex;
-  padding: 10px;
-  width: max-content;
-  margin-left: 3px;
-  margin-top: -5px;
-  border-radius: 100%;
-  -webkit-app-region: no-drag;
-  z-index: 2;
+  align-self: end;
+  margin: 6px 0;
   cursor: pointer;
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
-  color: var(--gray-11);
 
   &:hover {
     color: var(--gray-12);
@@ -50,28 +45,31 @@ const ToggleButton = styled(Box)`
   }
 `
 
-export default function Menu() {
+const StyledLogo = styled(Logo)`
+  transform: translate(13px, 15px);
+`
+
+export default function Sidebar() {
   const libraries = useLibraries()
   const collections = useCollections()
 
-  const [{ isSidebarOpen }, setAppState] = useAppState()
-  const width = isSidebarOpen ? 200 : 70
+  const [state, setAppState] = useAppState()
 
   const handleToggleClick = () => {
     setAppState((prev) => ({
       ...prev,
-      isSidebarOpen: !prev.isSidebarOpen,
+      'sidebar.open': !prev['sidebar.open'],
     }))
   }
 
   return (
-    <Container $width={width}>
-      <Logo />
+    <Container $isOpen={state['sidebar.open']}>
+      <StyledLogo />
       <ToggleButton onClick={handleToggleClick}>
-        {isSidebarOpen ? <CollapseIcon /> : <ExpandIcon />}
+        {state['sidebar.open'] ? <CollapseIcon /> : <ExpandIcon />}
       </ToggleButton>
-      <nav>
-        <NavSection label={libraryLabel}>
+      <Nav>
+        <NavSection label="Library">
           {libraries?.map((library) => (
             <NavItem
               key={library.id}
@@ -82,7 +80,7 @@ export default function Menu() {
             />
           ))}
         </NavSection>
-        <NavSection label={collectionsLabel}>
+        <NavSection label="Collection">
           {collections?.map((collection) => (
             <NavItem
               key={collection.id}
@@ -93,7 +91,7 @@ export default function Menu() {
             />
           ))}
         </NavSection>
-      </nav>
+      </Nav>
     </Container>
   )
 }

@@ -1,6 +1,21 @@
 import { ipcRenderer } from 'electron'
 import { FuseResult } from 'fuse.js'
-import { Collection, Family, Library, Page, Paged, WithoutId } from './types'
+import {
+  CatalogTypeName,
+  Collection,
+  Family,
+  Library,
+  Page,
+  Paged,
+  WithoutId,
+} from './types'
+
+export type WindowControlAction = 'minimize' | 'maximize.toggle' | 'close'
+
+type Stats = {
+  families: number
+  fonts: number
+}
 
 const api = {
   'select.directory'(): Promise<string | undefined> {
@@ -27,11 +42,17 @@ const api = {
   ): Promise<FuseResult<Family>[]> {
     return ipcRenderer.invoke('search.fonts', libraryId, query)
   },
+  'get.stats'(id: number, type: CatalogTypeName): Promise<Stats | undefined> {
+    return ipcRenderer.invoke('get.stats', id, type)
+  },
   'install.fonts'(ids: number[]): Promise<void> {
     return ipcRenderer.invoke('install.fonts', ids)
   },
   'uninstall.fonts'(ids: number[]): Promise<void> {
     return ipcRenderer.invoke('uninstall.fonts', ids)
+  },
+  'window.control'(action: WindowControlAction): Promise<void> {
+    return ipcRenderer.invoke('window.control', action)
   },
 } as const
 
