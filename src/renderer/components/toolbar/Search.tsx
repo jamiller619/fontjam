@@ -1,4 +1,4 @@
-import { Search20Filled as SearchIcon } from '@fluentui/react-icons'
+import { Search16Filled as SearchIcon } from '@fluentui/react-icons'
 import { Flex } from '@radix-ui/themes'
 import { HTMLAttributes, useRef } from 'react'
 import styled from 'styled-components'
@@ -18,21 +18,15 @@ const Searchbox = styled(Textbox).attrs({
   size: '2',
 })`
   width: 350px;
+
+  &::-webkit-search-cancel-button {
+    appearance: none;
+  }
 `
-
-export function useSearch() {
-  const [searchText, setSearchText] = useSessionStorage('searchText', '')
-
-  return [searchText, setSearchText] as const
-}
 
 export default function Search(props: SearchProps) {
   const ref = useRef<HTMLInputElement>(null)
-  const [searchText, setSearchText] = useSearch()
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchText(e.target.value)
-  }
+  const [searchText, setSearchText] = useSessionStorage('searchText', '')
 
   return (
     <Container {...props}>
@@ -40,7 +34,7 @@ export default function Search(props: SearchProps) {
         icon={<SearchIcon />}
         ref={ref}
         value={searchText ?? ''}
-        onChange={handleSearchChange}
+        onChange={(e) => setSearchText(e.target.value)}
       />
     </Container>
   )

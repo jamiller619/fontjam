@@ -102,8 +102,6 @@ type Preview = {
 export default function Family() {
   const { name, id } = useParams()
   const { data: family } = useAPI('get.family', [Number(id), name], {
-    refreshWhenHidden: false,
-    revalidateOnFocus: false,
     revalidateOnReconnect: false,
   })
 

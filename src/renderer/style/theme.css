@@ -24,7 +24,7 @@ html {
 
 body {
   margin: 0;
-  -webkit-user-select: none;
+  user-select: none;
 }
 
 .radix-themes {

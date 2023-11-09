@@ -27,8 +27,6 @@ const Container = styled(Flex)`
   justify-content: space-between;
   z-index: 1;
   -webkit-app-region: drag;
-  background: var(--gray-a1);
-  backdrop-filter: blur(10px);
 `
 
 const ToolbarIconButton = styled(IconButton).attrs({
