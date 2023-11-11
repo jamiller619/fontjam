@@ -4,6 +4,7 @@ import styled from 'styled-components'
 
 type TextboxProps = ComponentProps<typeof TextField.Input> & {
   icon?: ReactNode
+  children?: ReactNode
 }
 
 const Container = styled(TextField.Root)`
@@ -33,8 +34,11 @@ const Container = styled(TextField.Root)`
 
   .rt-TextFieldSlot {
     gap: 0;
-    padding-right: var(--space-1);
     color: inherit;
+
+    svg {
+      color: inherit;
+    }
   }
 
   &:hover {
@@ -45,13 +49,14 @@ const Container = styled(TextField.Root)`
 `
 
 function Textbox(
-  { icon, radius, color, size, ...props }: TextboxProps,
+  { icon, radius, color, size, children, ...props }: TextboxProps,
   ref: Ref<HTMLInputElement>
 ) {
   return (
     <Container radius={radius} color={color} size={size}>
       {icon && <TextField.Slot>{icon}</TextField.Slot>}
       <TextField.Input {...props} ref={ref} />
+      {children && <TextField.Slot>{children}</TextField.Slot>}
     </Container>
   )
 }

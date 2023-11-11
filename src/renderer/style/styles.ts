@@ -10,8 +10,8 @@ export const control = {
     transition-timing-function: ease-out;
   `,
   active: css`
-    background-color: var(--gray-a3);
-    color: var(--gray-12);
+    background-color: var(--gray-a2);
+    color: var(--accent-9);
     transition-duration: 100ms;
   `,
   pressed: css`
@@ -19,7 +19,7 @@ export const control = {
     transition-duration: 100ms;
   `,
   hover: css`
-    background-color: var(--gray-a4);
-    color: var(--gray-12);
+    background-color: var(--gray-a3);
+    color: var(--accent-8);
   `,
 }

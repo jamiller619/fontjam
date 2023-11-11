@@ -1,9 +1,9 @@
 import { Flex } from '@radix-ui/themes'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment } from 'react'
 import { Outlet } from 'react-router-dom'
 import styled from 'styled-components'
-import { useEventListener } from 'usehooks-ts'
 import WindowControls from '~/components/WindowControls'
+import useSetFocus from '../../hooks/useAppFocus'
 import Footer from './Footer'
 import Sidebar from './Sidebar'
 
@@ -17,21 +17,11 @@ const OutletContainer = styled(Flex)`
   flex-grow: 1;
   flex-direction: column;
   overflow: hidden;
+  background: linear-gradient(135deg, var(--gray-a2) 20%, var(--gray-a1) 80%);
 `
 
 export default function Layout() {
-  const [isFocused, setIsFocused] = useState(true)
-
-  useEventListener('focus', () => setIsFocused(true))
-  useEventListener('blur', () => setIsFocused(false))
-
-  useEffect(() => {
-    if (isFocused) {
-      document.body.classList.add('focused')
-    } else {
-      document.body.classList.remove('focused')
-    }
-  }, [isFocused])
+  useSetFocus()
 
   return (
     <Fragment>

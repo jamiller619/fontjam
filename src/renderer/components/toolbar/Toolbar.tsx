@@ -1,13 +1,13 @@
 import {
-  Grid20Regular as GridIcon,
-  TextBulletList20Regular as ListIcon,
+  Grid20Filled as GridIcon,
+  TextBulletList20Filled as ListIcon,
 } from '@fluentui/react-icons'
 import { Flex, IconButton } from '@radix-ui/themes'
 import { HTMLAttributes } from 'react'
 import styled from 'styled-components'
 import useAppState from '~/hooks/useAppState'
 import useClassNames from '~/hooks/useClassNames'
-import { control } from '~/style/theme'
+import { control } from '~/style/styles'
 import Search from './Search'
 
 type ToolbarProps = HTMLAttributes<HTMLDivElement>
@@ -27,11 +27,11 @@ const Container = styled(Flex)`
   justify-content: space-between;
   z-index: 1;
   -webkit-app-region: drag;
+  background: var(--gray-surface);
 `
 
 const ToolbarIconButton = styled(IconButton).attrs({
   variant: 'ghost',
-  color: 'gray',
   radius: 'large',
   size: '2',
 })`

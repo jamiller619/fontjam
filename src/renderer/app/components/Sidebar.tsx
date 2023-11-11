@@ -4,10 +4,10 @@ import {
 } from '@fluentui/react-icons'
 import { Flex, IconButton } from '@radix-ui/themes'
 import styled from 'styled-components'
-import { Logo, NavItem, NavSection } from '~/components/menu'
 import useAppState from '~/hooks/useAppState'
 import { useCollections, useLibraries } from '~/hooks/useCatalog'
 import * as SidebarAnimation from './SidebarAnimation'
+import { Logo, NavItem, NavSection } from './menu'
 
 const Container = styled(Flex)<{ $isOpen: boolean }>`
   flex-direction: column;

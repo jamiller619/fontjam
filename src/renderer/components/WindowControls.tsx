@@ -4,20 +4,23 @@ import {
   Subtract16Regular as MinIcon,
 } from '@fluentui/react-icons'
 import { Flex } from '@radix-ui/themes'
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
 import type { WindowControlAction } from '@shared/api'
+import useAppFocus from '~/hooks/useAppFocus'
 
-const Container = styled(Flex)`
+const Container = styled(Flex)<{ $isWindowFocused: boolean }>`
   position: fixed;
   top: 0;
   right: 0;
   -webkit-app-region: no-drag;
-  z-index: 2;
+  z-index: 3;
   color: var(--gray-7);
 
-  .focused & {
-    color: var(--gray-11);
-  }
+  ${({ $isWindowFocused }) =>
+    $isWindowFocused &&
+    css`
+      color: var(--gray-11);
+    `}
 `
 
 const Button = styled('button')`
@@ -48,8 +51,10 @@ export default function WindowControls() {
     await window.api['window.control'](state)
   }
 
+  const isFocused = useAppFocus()
+
   return (
-    <Container>
+    <Container $isWindowFocused={isFocused}>
       <Button onClick={handle('minimize')}>
         <MinIcon />
       </Button>

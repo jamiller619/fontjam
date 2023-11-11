@@ -79,9 +79,9 @@ export default function Catalog(props: LibraryProps) {
   //   }
   // }, [families, id, isMounted, searchText])
 
-  const el = document.querySelector(
-    '[data-is-root-theme="true"]'
-  ) as HTMLElement | null
+  // const el = document.querySelector(
+  //   '[data-is-root-theme="true"]'
+  // ) as HTMLElement | null
 
   return (
     <Fragment>
@@ -96,9 +96,9 @@ export default function Catalog(props: LibraryProps) {
           <NoResults />
         </NoResultsContainer>
       )}
-      <Portal container={el}>
+      {/* <Portal container={el}>
         <Outlet />
-      </Portal>
+      </Portal> */}
     </Fragment>
   )
 }

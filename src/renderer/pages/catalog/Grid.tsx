@@ -31,7 +31,6 @@ const Container = styled(Box)<{ $view: 'list' | 'grid' }>`
           gap: var(--space-3);
         `}
   padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
-  background: linear-gradient(135deg, var(--gray-a2) 20%, var(--gray-a1) 80%);
 `
 
 export default function Grid({ data, children }: GridProps) {

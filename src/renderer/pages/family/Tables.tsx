@@ -1,9 +1,9 @@
 import { Box, Select } from '@radix-ui/themes'
-import { Fragment, useState } from 'react'
+import { Fragment, HTMLAttributes, useState } from 'react'
 
 type Tables = Record<string, opentype.Table>
 
-type TableProps = {
+type TableProps = HTMLAttributes<HTMLDivElement> & {
   data?: Tables
 }
 
@@ -32,7 +32,7 @@ function sortObject(obj?: Tables) {
   return resp
 }
 
-export default function Tables({ data }: TableProps) {
+export default function Tables({ data, ...props }: TableProps) {
   const sorted = sortObject(data)
   const [activeTab, setActiveTab] = useState('name')
 
@@ -48,7 +48,7 @@ export default function Tables({ data }: TableProps) {
           ))}
         </Select.Content>
       </Select.Root>
-      <Box>
+      <Box {...props}>
         {activeTab && sorted && (
           <pre>{JSON.stringify(sorted[activeTab], null, 2)}</pre>
         )}

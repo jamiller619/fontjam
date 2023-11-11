@@ -54,7 +54,7 @@ const Container = styled(Flex)<{ $height: number; $view: string }>`
     background-color: var(--gray-a3);
     color: var(--gray-12);
     transform: ${({ $view }) =>
-      $view === 'grid' ? 'scale(1.03)' : 'translateY(-1px)'};
+      $view === 'grid' ? 'scale(1.03)' : 'scale(1.002)'};
     box-shadow: 0 3px 30px 5px var(--black-a3);
 
     ${Header} {
@@ -149,13 +149,13 @@ export default forwardRef<HTMLDivElement, CardProps>(function Card(
     e.preventDefault()
 
     const clean = [
-      applyViewTransition('card', containerRef),
+      // applyViewTransition('card', containerRef),
       // applyViewTransition('heading', headingRef),
       // applyViewTransition('preview', previewRef),
     ]
 
     return function linkClickCleanup() {
-      clean.map((c) => c())
+      // clean.map((c) => c())
     }
   }, [])
 
@@ -167,7 +167,7 @@ export default forwardRef<HTMLDivElement, CardProps>(function Card(
             <Flex justify="between" gap="1">
               <Header asChild>
                 <AnimatedLink
-                  to={`family/${data.name}`}
+                  to={`/family/${data.libraryId}/${data.name}`}
                   onClick={handleLinkClick}>
                   {data.name}
                 </AnimatedLink>

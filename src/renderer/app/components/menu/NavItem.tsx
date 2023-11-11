@@ -5,7 +5,7 @@ import styled from 'styled-components'
 import AnimatedLink from '~/components/AnimatedLink'
 import useClassNames from '~/hooks/useClassNames'
 import usePress from '~/hooks/usePress'
-import { control } from '~/style/theme'
+import { control } from '~/style/styles'
 import CustomIcon from './CustomIcon'
 
 type NavItemProps = HTMLAttributes<HTMLLIElement> & {

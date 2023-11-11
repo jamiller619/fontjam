@@ -1,8 +1,8 @@
 import { Flex, Text } from '@radix-ui/themes'
-import { useEffect, useRef } from 'react'
+import { HTMLAttributes, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 
-type GlyphsProps = {
+type GlyphsProps = HTMLAttributes<HTMLDivElement> & {
   data?: opentype.Font | null
 }
 
@@ -84,13 +84,13 @@ const Container = styled(Flex)`
   gap: var(--space-1);
 `
 
-export default function Glyphs({ data }: GlyphsProps) {
+export default function Glyphs({ data, ...props }: GlyphsProps) {
   const loop = new Array(Math.min(100, data?.glyphs.length ?? 0)).fill(
     undefined
   )
 
   return (
-    <Container>
+    <Container {...props}>
       {data != null
         ? loop
             .map((_, i) => <Glyph key={i} data={data} index={i} />)
