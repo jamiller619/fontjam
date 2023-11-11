@@ -1,20 +1,4 @@
-type IconName = keyof typeof import('@fluentui/react-icons')
-
-type FluentUIIcon = Exclude<
-  IconName,
-  | 'wrapIcon'
-  | 'bundleIcon'
-  | 'createFluentIcon'
-  | 'IconDirectionContextProvider'
-  | 'IconDirectionContextValue'
-  | 'useIconContext'
-  | 'FluentIconsProps'
-  | 'FluentIcon'
-  | 'useIconState'
-  | 'UseIconStateOptions'
-  | 'iconFilledClassName'
-  | 'iconRegularClassName'
->
+type FluentUIIcon = string
 
 type LocalIcon = 'GoogleFonts'
 
@@ -37,6 +21,12 @@ export type CatalogLocation = {
   path: string
 }
 
+export type CatalogFont = {
+  id: number
+  catalogId: number
+  fontId: number
+}
+
 type AsCatalogType<T extends CatalogTypeName> = Catalog & {
   type: T
 }
@@ -48,4 +38,6 @@ export type Online = AsCatalogType<'online'>
 export type CatalogTypeName = 'library' | 'collection' | 'online'
 export type CatalogRecord<T extends CatalogTypeName> = T extends 'library'
   ? Library
-  : Collection
+  : T extends 'collection'
+  ? Collection
+  : Online
