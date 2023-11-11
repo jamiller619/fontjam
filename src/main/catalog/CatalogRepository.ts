@@ -24,7 +24,6 @@ const CatalogSchema = sql`
 	createdAt INTEGER NOT NULL,
 	isEditable INTEGER DEFAULT 1,
 	icon TEXT,
-  color TEXT DEFAULT "accent",
   path TEXT NOT NULL UNIQUE,
   type TEXT NOT NULL
 `

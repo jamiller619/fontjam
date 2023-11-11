@@ -27,7 +27,7 @@
     "es6": true,
     "node": true
   },
-  "ignorePatterns": ["dist"],
+  "ignorePatterns": ["dist", "design"],
   "rules": {
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",

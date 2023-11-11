@@ -1,6 +1,5 @@
 type Font = {
   id: number
-  libraryId: number
   family: string
   fullName: string
   postscriptName: string

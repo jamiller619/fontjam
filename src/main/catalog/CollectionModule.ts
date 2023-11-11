@@ -32,7 +32,6 @@ export async function init() {
 
     if (exists == null) {
       await CatalogRepository.createCollection({
-        color: collection.color as Collection['color'],
         icon: collection.icon as Collection['icon'],
         isEditable: collection.isEditable as 0 | 1,
         name: collection.name,

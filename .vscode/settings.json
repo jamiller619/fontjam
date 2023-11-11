@@ -6,10 +6,11 @@
     "**/*.tsbuildinfo": true,
     ".git": true,
     "*.lock": true,
-    "dist": true
+    "dist": true,
+    "design": true
   },
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll": true
   },
   "typescript.tsdk": "./node_modules/typescript/lib",
   "cssvar.files": ["./node_modules/@radix-ui/themes/styles.css"],

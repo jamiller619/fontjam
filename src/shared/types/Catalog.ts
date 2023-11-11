@@ -1,8 +1,6 @@
-import { type radixColorScales } from '@radix-ui/themes'
-
 type IconName = keyof typeof import('@fluentui/react-icons')
 
-type Icon = Exclude<
+type FluentUIIcon = Exclude<
   IconName,
   | 'wrapIcon'
   | 'bundleIcon'
@@ -18,24 +16,36 @@ type Icon = Exclude<
   | 'iconRegularClassName'
 >
 
+type LocalIcon = 'GoogleFonts'
+
 type Catalog = {
   id: number
   createdAt: number
   name: string
   path: string
   isEditable: 0 | 1
-  type: 'library' | 'collection'
+  type: CatalogTypeName
+  locations: CatalogLocation[]
 
-  icon: Icon
-  color: (typeof radixColorScales)[number] | 'accent' | 'gray'
+  icon: `localicon://${LocalIcon}` | `fluentui://${FluentUIIcon}`
 }
 
 export default Catalog
 
-export type Library = Omit<Catalog, 'type'>
-export type Collection = Omit<Catalog, 'type'>
+export type CatalogLocation = {
+  id: number
+  path: string
+}
 
-export type CatalogTypeName = 'library' | 'collection'
+type AsCatalogType<T extends CatalogTypeName> = Catalog & {
+  type: T
+}
+
+export type Library = AsCatalogType<'library'>
+export type Collection = AsCatalogType<'collection'>
+export type Online = AsCatalogType<'online'>
+
+export type CatalogTypeName = 'library' | 'collection' | 'online'
 export type CatalogRecord<T extends CatalogTypeName> = T extends 'library'
   ? Library
   : Collection

@@ -1,9 +1,9 @@
 import process from 'node:process'
 import { Library } from '@shared/types'
-import { libraries } from '~/data/defaultData.json'
 import TokenPath from '~/lib/TokenPath'
 import * as CatalogRepository from './CatalogRepository'
 import * as LibraryScanner from './LibraryScanner'
+import { libraries } from './defaults.json'
 
 type SystemFontDirectory = {
   system?: TokenPath
@@ -49,7 +49,6 @@ export async function init() {
     if (exists == null) {
       await CatalogRepository.createLibrary({
         icon: lib.icon as Library['icon'],
-        color: lib.color as Library['color'],
         path: dirs[lib.name.toLowerCase() as keyof typeof dirs]!.path,
         isEditable: lib.isEditable as 0 | 1,
         name: lib.name,
