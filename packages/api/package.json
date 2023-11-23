@@ -1,0 +1,14 @@
+{
+  "name": "@fontjam/api",
+  "version": "0.0.1",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node --loader ts-node/esm --env-file .env dist/cli.js",
+    "build": "yarn tsup src/google-fonts/cli.ts --format esm"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}

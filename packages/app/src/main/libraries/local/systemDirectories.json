@@ -1,0 +1,12 @@
+{
+  "darwin": {
+    "system": "/System/Library/Fonts"
+  },
+  "linux": {
+    "system": "/usr/share/fonts"
+  },
+  "win32": {
+    "system": "%windir%\\Fonts",
+    "user": "%localappdata%\\Microsoft\\Windows\\Fonts"
+  }
+}

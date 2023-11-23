@@ -1,0 +1,34 @@
+{
+  "local": [
+    {
+      "name": "System",
+      "icon": "fluentui/Tv20Filled",
+      "isEditable": 0
+    },
+    {
+      "name": "User",
+      "icon": "fluentui/PersonCircle20Filled",
+      "isEditable": 0
+    }
+  ],
+  "remote": [
+    {
+      "name": "Google Fonts",
+      "icon": "lib/GoogleFonts",
+      "isEditable": 0,
+      "path": "https://www.googleapis.com/webfonts/v1/webfonts"
+    }
+  ],
+  "collection": [
+    {
+      "name": "Favorites",
+      "icon": "fluentui/Heart20Filled",
+      "isEditable": 0
+    },
+    {
+      "name": "Recently Added",
+      "icon": "fluentui/Clock20Filled",
+      "isEditable": 0
+    }
+  ]
+}
