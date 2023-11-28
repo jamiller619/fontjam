@@ -12,7 +12,7 @@ export default class RemoteAdapter
     return library.type === 'remote'
   }
 
-  async init() {
+  override async init() {
     await super.init('remote')
   }
 

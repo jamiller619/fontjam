@@ -20,11 +20,11 @@ export default function useWindowList<T extends HTMLElement>(
   useEffect(() => {
     if (!ref.current) return
 
-    const parent = ref.current.parentElement
+    // const parent = ref.current.parentElement
 
-    if (!parent) return
+    // if (!parent) return
 
-    setPageSize(Math.ceil(parent.clientHeight / rowHeight) + 1)
+    setPageSize(Math.ceil(ref.current.clientHeight / rowHeight) + 1)
   }, [ref, rowHeight])
 
   return [page, page + pageSize] as const

@@ -4,6 +4,7 @@ import {
   RouterProvider,
   createBrowserRouter,
   useNavigate,
+  useParams,
 } from 'react-router-dom'
 import { AddItem } from '~/pages/add'
 import { Family } from '~/pages/family'
@@ -20,6 +21,12 @@ const HomeRouter = () => {
   return null
 }
 
+const LibraryRouter = () => {
+  const { id } = useParams()
+
+  return <Library id={Number(id)} />
+}
+
 const routes: RouteObject[] = [
   {
     path: '/',
@@ -31,7 +38,7 @@ const routes: RouteObject[] = [
       },
       {
         path: '/library/:id',
-        element: <Library />,
+        element: <LibraryRouter />,
         children: [
           {
             path: 'add/library',

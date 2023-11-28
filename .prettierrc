@@ -8,6 +8,7 @@
     "^node:(.*)$",
     "<THIRD_PARTY_MODULES>",
     "^@root/(.*)$",
+    "^@fontjam/(.*)$",
     "^@shared/(.*)$",
     "^~/(.*)$",
     "^[./]"

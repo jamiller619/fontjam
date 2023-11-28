@@ -1,26 +1,28 @@
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import EventEmitter from 'events'
 //@ts-ignore: Typescript cannot figure out that this is a
 //node project - it keeps reading types from the 'browser' module
 import { fileTypeFromFile } from 'file-type'
 import logger from 'logger'
-import TypedEventEmitter from 'typed-emitter'
-import { Font, FontFamily, Library } from '@shared/types'
+import TypedEmitter from 'typed-emitter'
+import { Library } from '@shared/types'
 import { formatMs } from '@shared/utils/datetime'
-import groupBy from '@shared/utils/groupBy'
 import { FontRepository } from '~/db'
+import { BaseFamilyWithFontPaths } from '~/db/FontRepository'
+import Stats from '~/lib/Stats'
 import scanner from '~/lib/scanner'
 // import task from '~/lib/task'
-import { parseFile } from './FontParser'
+import * as FontFileParser from '~/libraries/FontFileParser'
 import fileTypes from './fontFileTypes.json'
 
-const log = logger('library.local.scanner')
+const log = logger('local.scanner')
 
 type ScanEvents = {
   'scan.complete'(library: Library): Promise<void> | void
 }
 
-const emitter = new EventEmitter() as TypedEventEmitter<ScanEvents>
+const emitter = new EventEmitter() as TypedEmitter<ScanEvents>
 
 export const on = emitter.on.bind(emitter)
 export const off = emitter.off.bind(emitter)
@@ -47,12 +49,28 @@ async function checkValidity(filePath: string) {
 }
 
 export async function scanLibrary(library: Library) {
-  const startTime = Date.now()
-  const fonts: Awaited<ReturnType<typeof parseFile>>[] = []
-  let fontsAdded = 0
-  let fontFamiliesAdded = 0
+  const fonts: Omit<
+    BaseFamilyWithFontPaths,
+    'id' | 'libraryId' | 'createdAt'
+  >[] = []
 
-  log.info(`Scanning library "${library.name}"`)
+  const stats = new Stats({
+    fontsAdded: 0,
+    fontFamiliesAdded: 0,
+  })
+    .on('complete', () => {
+      log.info(
+        `Added ${stats.state.fontFamiliesAdded} font families (${
+          stats.state.fontsAdded
+        } fonts) to ${library.name} in ${formatMs(stats.duration)}s`
+      )
+
+      emitter.emit('scan.complete', library)
+    })
+    .on('start', () => {
+      log.info(`Scanning library "${library.name}"`)
+    })
+    .start()
 
   for await (const filePath of scanner.scanDir(library.path)) {
     try {
@@ -62,13 +80,14 @@ export async function scanLibrary(library: Library) {
         continue
       }
 
-      const exists = await FontRepository.find('path', filePath)
+      const exists = await FontRepository.find('fonts', 'path', filePath)
 
       if (exists != null) continue
 
-      const font = await parseFile(filePath)
+      const buffer = await fs.readFile(filePath)
+      const font = FontFileParser.parse(filePath, buffer)
 
-      fonts.push(font)
+      if (font) fonts.push(font)
     } catch (err) {
       log.error(`Unable to parse file "${filePath}"`, err as Error)
     }
@@ -80,43 +99,16 @@ export async function scanLibrary(library: Library) {
     return
   }
 
-  const families = Object.values(groupBy(fonts, (f) => f.family))
+  const families = FontFileParser.parseList(fonts)
 
   for await (const family of families) {
-    const data: Omit<FontFamily<Omit<Font, 'id' | 'familyId'>>, 'id'> = {
-      copyright: null,
-      createdAt: startTime,
-      libraryId: library.id,
-      name: family[0].family,
-      popularity: null,
-      tags: null,
-      fonts: family.map((f) => {
-        return {
-          createdAt: startTime,
-          fullName: f.fullName,
-          path: f.path,
-          postscriptName: f.postscriptName,
-          style: f.style,
-          weight: f.weight,
-        }
-      }),
-    }
+    await FontRepository.upsertFamily(library.id, family)
 
-    const familyId = await FontRepository.insertFamily(data)
-
-    if (familyId != null) {
-      fontsAdded += data.fonts.length
-      fontFamiliesAdded += 1
-    }
+    stats.update(({ fontFamiliesAdded, fontsAdded }) => ({
+      fontFamiliesAdded: fontFamiliesAdded + 1,
+      fontsAdded: fontsAdded + family.fonts.length,
+    }))
   }
 
-  const duration = Date.now() - startTime
-
-  log.info(
-    `Added ${fontFamiliesAdded} font families (${fontsAdded} fonts) to ${
-      library.name
-    } in ${formatMs(duration)}s`
-  )
-
-  emitter.emit('scan.complete', library)
+  stats.complete()
 }

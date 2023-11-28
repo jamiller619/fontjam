@@ -16,7 +16,7 @@
       "name": "Google Fonts",
       "icon": "lib/GoogleFonts",
       "isEditable": 0,
-      "path": "https://www.googleapis.com/webfonts/v1/webfonts"
+      "path": "https://www.googleapis.com/webfonts"
     }
   ],
   "collection": [

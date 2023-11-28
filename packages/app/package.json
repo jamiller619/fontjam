@@ -41,6 +41,7 @@
     "@fluentui/react-icons": "^2.0.221",
     "@radix-ui/react-toggle-group": "^1.0.4",
     "@radix-ui/themes": "^2.0.0",
+    "@tanstack/react-virtual": "^3.0.0-beta.68",
     "conf": "^12.0.0",
     "dotenv": "^16.3.1",
     "env-paths": "^3.0.0",

@@ -1,17 +1,12 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import envPaths from 'env-paths'
-import { name } from '@root/package.json'
 import { Library } from '@shared/types'
 import slugify from '@shared/utils/slugify'
+import { paths } from '~/config'
 import { LibraryRepository } from '~/db'
 import CommonAdapter from '~/libraries/CommonAdapter'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
 import { collection as defaultCollections } from '~/libraries/defaultLibraries.json'
-
-const paths = envPaths(name, {
-  suffix: '',
-})
 
 async function resolvePath(collectionName: string) {
   const file = path.normalize(
@@ -33,7 +28,7 @@ export default class CollectionAdapter
     return library.type === 'collection'
   }
 
-  async init() {
+  override async init() {
     await super.init('collection')
   }
 

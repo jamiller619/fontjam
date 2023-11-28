@@ -1,46 +1,49 @@
 import { Transform } from 'node:stream'
-import sql, { bulk, raw } from 'sql-template-tag'
-import { Font, FontFamily, Page, Paged, Tag } from '@shared/types'
+import sql, { Sql, bulk, raw } from 'sql-template-tag'
+import { BaseFont, Font, FontFamily, Page, Paged } from '@shared/types'
 import groupBy from '@shared/utils/groupBy'
 import Repository from './Repository'
+import filters from './filters'
 
-type FontFamilyJoin = Omit<FontFamily, 'fonts' | 'tags'> &
+type TableMap = {
+  fonts: Font
+  families: Omit<FontFamily, 'fonts' | 'tags'> & {
+    tags: string | null
+  }
+}
+
+type FontFamilyJoin = TableMap['families'] &
   Omit<Font, 'id' | 'familyId' | 'createdAt'> & {
-    tags: string
     fontId: number
     fontCreatedAt: number
   }
 
-const fontFamilyJoinQuery = sql`
+const fontFamilyJoinQuery = (subQuery: Sql) => sql`
   SELECT
-    fam.id,
-    fam.libraryId,
-    fam.createdAt,
-    fam.name,
-    fam.tags,
-    fam.copyright,
-    fam.popularity,
-    fnt.id as fontId,
-    fnt.createdAt as fontCreatedAt,
-    fnt.fullName,
-    fnt.path,
-    fnt.postscriptName,
-    fnt.style,
-    fnt.weight
-  FROM families AS fam
-  JOIN fonts AS fnt
-  ON fam.id = fnt.familyId
+    families.id,
+    families.createdAt,
+    families.name,
+    families.tags,
+    families.copyright,
+    families.popularity,
+    families.designer,
+    families.license,
+    families.version,
+    fonts.id as fontId,
+    fonts.createdAt as fontCreatedAt,
+    fonts.fullName,
+    fonts.path,
+    fonts.postscriptName,
+    fonts.style,
+    fonts.weight
+  FROM (
+    SELECT *
+    FROM families
+    ${subQuery}
+  ) as families
+  join fonts
+  on families.id = fonts.familyId
 `
-
-function sortFonts(a: Font, b: Font) {
-  const na = a.fullName.toUpperCase()
-  const nb = b.fullName.toUpperCase()
-
-  if (na < nb) return -1
-  if (na > nb) return 1
-
-  return 0
-}
 
 function mapFontFamilyJoins(data: FontFamilyJoin[]) {
   const families = groupBy(data, (d) => String(d.id))
@@ -55,64 +58,117 @@ function mapFontFamilyJoins(data: FontFamilyJoin[]) {
       libraryId: ref.libraryId,
       name: ref.name,
       popularity: ref.popularity,
-      tags: JSON.parse(ref.tags) as Tag[],
-      fonts: rows
-        .map((row) => ({
-          createdAt: row.fontCreatedAt,
-          familyId: ref.id,
-          fullName: row.fullName,
-          id: row.fontId,
-          path: row.path,
-          postscriptName: row.postscriptName,
-          style: row.style,
-          weight: row.weight,
-        }))
-        .sort(sortFonts),
+      tags: ref.tags ? JSON.parse(ref.tags) : null,
+      designer: ref.designer,
+      license: ref.license,
+      version: ref.version,
+      fonts: rows.map((row) => ({
+        createdAt: row.fontCreatedAt,
+        familyId: ref.id,
+        fullName: row.fullName,
+        id: row.fontId,
+        path: row.path,
+        postscriptName: row.postscriptName,
+        style: row.style,
+        weight: row.weight,
+      })),
     }
 
     return family
   })
 }
 
-class FontRepository extends Repository<Font> {
-  constructor() {
-    super('fonts')
+export type BaseFamilyWithFontPaths = Omit<TableMap['families'], 'fonts'> & {
+  fonts: (BaseFont & {
+    path: string
+  })[]
+}
+
+class FontRepository extends Repository<TableMap> {
+  async #findOrInsertFamily(
+    libraryId: number,
+    data: Omit<TableMap['families'], 'id' | 'createdAt' | 'libraryId'>
+  ) {
+    const familyRecord = await this.findFamilyByName(libraryId, data.name)
+
+    if (familyRecord == null) {
+      return this.insert('families', {
+        ...data,
+        createdAt: Date.now(),
+        libraryId,
+      })
+    }
+
+    return familyRecord
+  }
+
+  async #getFamilyFonts(familyId: number) {
+    const query = sql`
+      SELECT * FROM fonts
+      WHERE familyId = ${familyId}
+    `
+
+    return this.queryMany<Font>(query)
+  }
+
+  async upsertFamily(
+    libraryId: number,
+    data: Omit<BaseFamilyWithFontPaths, 'id' | 'createdAt' | 'libraryId'>
+  ) {
+    const { fonts, ...family } = data
+    const record = await this.#findOrInsertFamily(libraryId, family)
+
+    if (record.libraryId === libraryId) {
+      await this.update('families', record.id, family)
+
+      const familyFonts = await this.#getFamilyFonts(record.id)
+
+      for await (const font of fonts) {
+        const found = familyFonts?.find((f) => f.fullName === font.fullName)
+
+        if (found != null) {
+          await this.update('fonts', found.id, font)
+        } else {
+          await this.insert('fonts', {
+            ...font,
+            createdAt: Date.now(),
+            familyId: record.id,
+          })
+        }
+      }
+    }
   }
 
   async insertFamily(
-    data: Omit<FontFamily<Omit<Font, 'id' | 'familyId'>>, 'id'>
+    libraryId: number,
+    data: Omit<BaseFamilyWithFontPaths, 'id' | 'createdAt' | 'libraryId'>
   ) {
     const { fonts, ...family } = data
 
-    const exists = await this.query<{ count: number }>(sql`
-      SELECT COUNT(*) as count FROM
-      families
-      WHERE name = ${data.name}
-      AND libraryId = ${data.libraryId}
-    `)
-
-    if (exists.count > 0) return
-
-    const id = await this.run(sql`
-      INSERT INTO families (${raw(Object.keys(family).toString())})
-      VALUES ${bulk([Object.values(family)])}
-    `)
+    const { id } = await this.insert('families', {
+      ...family,
+      libraryId,
+      createdAt: Date.now(),
+    })
 
     const keys = ['familyId', ...Object.keys(data.fonts.at(0)!)]
-
-    await this.run(sql`
+    const query = sql`
       INSERT INTO fonts (${raw(keys.toString())})
       VALUES ${bulk(fonts.map((font) => [id, ...Object.values(font)]))}
-    `)
+    `
+
+    await this.run(query)
 
     return id
   }
 
   async getFamilies(libraryId: number, page: Page) {
-    const data = await this.queryMany<FontFamilyJoin>(sql`
-      ${fontFamilyJoinQuery}
-      WHERE fam.libraryId = ${libraryId}
+    const query = fontFamilyJoinQuery(sql`
+      WHERE libraryId = ${libraryId}
+      ${filters.page(page)}
     `)
+
+    const data = await this.queryMany<FontFamilyJoin>(query)
     const total = await this.countFamilies(libraryId)
     const records = mapFontFamilyJoins(data)
 
@@ -126,28 +182,21 @@ class FontRepository extends Repository<Font> {
     return response
   }
 
-  findFamilyByName(name: string) {
-    return this.query<Omit<FontFamily, 'fonts'>>(sql`
+  findFamilyByName(libraryId: number, name: string) {
+    return this.query<TableMap['families']>(sql`
       SELECT * FROM families
-      WHERE name = "${raw(name)}"
+      WHERE name = ${name}
+      AND libraryId = ${libraryId}
     `)
-  }
-
-  async getFamily(familyId: number) {
-    const data = await this.queryMany<FontFamilyJoin>(sql`
-      ${fontFamilyJoinQuery}
-      WHERE fam.id = ${familyId}
-    `)
-
-    return mapFontFamilyJoins(data).at(0)
   }
 
   streamFamilies(libraryId: number) {
-    const stream = this.stream<FontFamilyJoin>(sql`
-      SELECT * FROM
-      families
+    const query = sql`
+      SELECT * FROM families
       WHERE libraryId = ${libraryId}
-    `)
+    `
+
+    const stream = this.stream<FontFamilyJoin>(query)
 
     return stream.pipe(
       new Transform({
@@ -166,7 +215,7 @@ class FontRepository extends Repository<Font> {
 
     const result = await this.query<{ total: number }>(query)
 
-    return result.total
+    return result?.total ?? 0
   }
 
   async countFonts(libraryId: number) {
@@ -180,7 +229,7 @@ class FontRepository extends Repository<Font> {
 
     const result = await this.query<{ total: number }>(query)
 
-    return result.total
+    return result?.total ?? 0
   }
 }
 

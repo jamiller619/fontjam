@@ -36,11 +36,15 @@ type SQLError = Error & {
 }
 
 export async function init() {
-  await Promise.all(adapters.map((a) => a.initDefaults())).catch((err) => {
-    if ((err as SQLError).code !== 'SQLITE_CONSTRAINT') {
-      log.error(`Unable to intialize defaults!`, err)
+  for await (const adapter of adapters) {
+    try {
+      await adapter.initDefaults()
+    } catch (err) {
+      if ((err as SQLError).code !== 'SQLITE_CONSTRAINT') {
+        log.error(`Unable to intialize defaults!`, err as Error)
+      }
     }
-  })
+  }
 
   const libraries = await LibraryRepository.getAll()
 
@@ -61,7 +65,7 @@ export async function init() {
       return undefined
     }
 
-    const library = await LibraryRepository.findById(libraryId)
+    const library = await LibraryRepository.byId(libraryId)
 
     if (library == null) {
       return undefined

@@ -8,8 +8,9 @@ const Container = styled(Flex)`
   z-index: 1;
   align-items: center;
   padding: var(--space-1) var(--space-3);
-  color: var(--gray-10);
-  background-color: var(--gray-0);
+  color: var(--gray-9);
+  font-weight: 450;
+  background-color: var(--gray-1);
   justify-content: end;
 `
 

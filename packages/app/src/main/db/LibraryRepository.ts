@@ -17,19 +17,19 @@ type MessageEvents = {
   'library.created'(library: Library): unknown
 }
 
-class LibraryRepository extends Repository<Library, MessageEvents> {
-  constructor() {
-    super('libraries')
-  }
+type TableMap = {
+  libraries: Library
+}
 
-  async findById(id: number) {
-    const result = await super.findById(id)
+class LibraryRepository extends Repository<TableMap, MessageEvents> {
+  async byId(id: number) {
+    const result = await this.findById('libraries', id)
 
     return result != null ? mapLibrary(result) : undefined
   }
 
   async create(data: Omit<Library, 'createdAt' | 'id'>) {
-    const library = await this.insert({
+    const library = await this.insert('libraries', {
       ...data,
       createdAt: Date.now(),
     })
@@ -49,7 +49,7 @@ class LibraryRepository extends Repository<Library, MessageEvents> {
   async getAll() {
     const records = await this.queryMany<Library>(sql`SELECT * FROM libraries`)
 
-    return records.map(mapLibrary)
+    return records?.map(mapLibrary)
   }
 
   async getStats(id?: number) {

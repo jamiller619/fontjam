@@ -16,27 +16,47 @@ export type Library = {
   path: string
 }
 
-export type Font = {
-  id: number
-  familyId: number
-  createdAt: number
+export type BaseFont = {
   fullName: string
-  path: string
-  postscriptName: string | null
   style: string
+
+  postscriptName: string | null
+  // A number value between 1 and 1000, inclusive
   weight: number | null
 }
 
-export type FontFamily<T = Font> = {
+export type Font = BaseFont & {
+  id: number
+  familyId: number
+  createdAt: number
+  path: string
+}
+
+export type BaseFontFamily = {
+  fonts: BaseFont[]
+  name: string
+
+  copyright: string | null
+  designer: string | null
+  license: string | null
+  popularity: number | null
+  tags: string | null
+  version: number | null
+}
+
+export type FontFamily = Omit<BaseFontFamily, 'fonts' | 'tags'> & {
   id: number
   libraryId: number
   createdAt: number
-  name: string
-  tags: Tag[] | null
-  copyright: string | null
-  popularity: number | null
-  fonts: T[]
+  fonts: Font[]
+  tags: string[] | null
 }
+
+// export type FontFamily<T extends SharedFont = Font> = SharedFontFamily<T> & {
+//   id: number
+//   libraryId: number
+//   createdAt: number
+// }
 
 export type OptionalId<T extends { id: number }> = Omit<T, 'id'> & {
   id?: number

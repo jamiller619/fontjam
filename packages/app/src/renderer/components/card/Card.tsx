@@ -16,8 +16,8 @@ import { Preview } from '~/components/preview'
 import useAppState from '~/hooks/useAppState'
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
-  data: FontFamily
-  isVisible: boolean
+  data: FontFamily | undefined
+  // isVisible: boolean
   height: number
   view: 'grid' | 'list'
 }
@@ -41,8 +41,7 @@ const Container = styled(Flex)<{ $height: number; $view: string }>`
   color: var(--gray-9);
   transition-duration: 120ms;
   transition-timing-function: ease-in-out;
-  transition-property: background-color, color, transform, box-shadow,
-    border-radius;
+  transition-property: background-color, color, transform, box-shadow;
   box-shadow: none;
 
   &:hover {
@@ -96,11 +95,11 @@ const contextMenuItems: ContextMenuItem[] = [
 // }
 
 export default forwardRef<HTMLDivElement, CardProps>(function Card(
-  { data, height, view, isVisible = false, ...props },
+  { data, height, view, ...props },
   ref
 ) {
   const [state] = useAppState()
-  const styles = data.fonts.map((f) => f.style)
+  const styles = data?.fonts.map((f) => f.style)
   const containerRef = useRef<HTMLDivElement>(null)
   // const headingRef = useRef<HTMLHeadingElement>(null)
   // const previewRef = useRef<HTMLDivElement>(null)
@@ -131,7 +130,7 @@ export default forwardRef<HTMLDivElement, CardProps>(function Card(
   return (
     <ContextMenu content={contextMenuItems}>
       <Container {...props} ref={containerRef} $view={view} $height={height}>
-        {isVisible && (
+        {data != null && (
           <Fragment>
             <Flex justify="between" gap="1">
               <Header asChild>
@@ -149,13 +148,13 @@ export default forwardRef<HTMLDivElement, CardProps>(function Card(
               {state['preview.text']}
             </Preview>
             <Footer>
-              {styles.slice(0, 4).map((style, i) => (
+              {styles?.slice(0, 4).map((style, i) => (
                 <FooterBadge key={`${i}:${data.name}:${style}`}>
                   {style}
                 </FooterBadge>
               ))}
-              {styles.length > 4 && (
-                <FooterBadge>+{styles.length - 4}</FooterBadge>
+              {(styles?.length ?? 0) > 4 && (
+                <FooterBadge>+{(styles?.length ?? 0) - 4}</FooterBadge>
               )}
             </Footer>
           </Fragment>

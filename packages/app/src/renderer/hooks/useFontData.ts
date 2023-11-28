@@ -15,7 +15,11 @@ export function useFontURL(fontId?: number, fontName?: string) {
 function isFontLoaded(fontName?: string | null) {
   if (!fontName) return false
 
-  return document.fonts.check(`12px ${fontName}`)
+  try {
+    return document.fonts.check(`12px ${fontName}`)
+  } catch {
+    return false
+  }
 }
 
 export function useFontFace(fontId?: number, fontName?: string) {
@@ -32,11 +36,16 @@ export function useFontFace(fontId?: number, fontName?: string) {
       return
     }
 
-    const fontFace = new FontFace(fontName, `url("${url}")`)
+    // const fontFace = new FontFace(fontName, `url("${url}")`)
 
-    document.fonts.add(fontFace)
+    // document.fonts.add(fontFace)
 
-    fontFace.load().then(() => (isMounted() ? setIsLoaded(true) : null))
+    // fontFace
+    //   .load()
+    //   .then(() => (isMounted() ? setIsLoaded(true) : null))
+    //   .catch((err) => {
+    //     console.error(err)
+    //   })
   }, [fontName, isLoaded, isMounted, url])
 
   return isLoaded

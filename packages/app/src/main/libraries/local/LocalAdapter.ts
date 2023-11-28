@@ -48,7 +48,7 @@ export default class LocalAdapter
     this.emit('library.loaded', library)
   }
 
-  async init() {
+  override async init() {
     LocalScanner.on('scan.complete', async () => {
       await buildIndex('local')
     })

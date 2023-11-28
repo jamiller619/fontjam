@@ -31,9 +31,11 @@ export default class MainWindow extends BrowserWindow {
         preload: path.join(dir, 'preload.cjs'),
       },
     })
+
+    this.show()
   }
 
-  async show() {
+  override async show() {
     if (IS_DEV) {
       log.info(`Loading dev window`)
       await this.loadURL('http://localhost:5173')

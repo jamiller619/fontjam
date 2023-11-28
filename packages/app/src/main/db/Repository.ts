@@ -6,26 +6,20 @@ import DatabaseStream from './DatabaseStream'
 import db from './db'
 import filters from './filters'
 
-export default abstract class Repository<
-  O extends { id: number },
+type Tables = Record<string, { id: number }>
+
+export default class Repository<
+  T extends Tables,
   E extends EventMap = EventMap
 > extends (EventEmitter as {
   new <E extends EventMap>(): TypedEmitter<E>
 })<E> {
-  #table: Sql
-
-  stream<R = O>(query: Sql) {
-    return new DatabaseStream<R>(query, db)
+  stream<T>(query: Sql) {
+    return new DatabaseStream<T>(query, db)
   }
 
-  constructor(table: string) {
-    super()
-
-    this.#table = raw(table)
-  }
-
-  query<R = O>(query: Sql) {
-    return new Promise<R>((resolve, reject) => {
+  query<R>(query: Sql) {
+    return new Promise<R | undefined>((resolve, reject) => {
       db.get(query.text, query.values, function callback(err, row) {
         if (err) reject(err)
         else resolve(row as R)
@@ -33,14 +27,23 @@ export default abstract class Repository<
     })
   }
 
-  queryMany<R = O>(query: Sql) {
+  queryMany<R>(query: Sql) {
     return new Promise<R[]>((resolve, reject) => {
       db.all(query.text, query.values, function callback(err, rows) {
         if (err) reject(err)
-        else resolve(rows as R[])
+        else resolve((rows ?? []) as R[])
       })
     })
   }
+
+  // queryMany<K extends keyof T>(query: Sql) {
+  //   return new Promise<T[K][]>((resolve, reject) => {
+  //     db.all(query.text, query.values, function callback(err, rows) {
+  //       if (err) reject(err)
+  //       else resolve((rows as T[K][]) ?? [])
+  //     })
+  //   })
+  // }
 
   run(query: Sql) {
     return new Promise<number>((resolve, reject) => {
@@ -51,58 +54,126 @@ export default abstract class Repository<
     })
   }
 
-  async all(page: Page, sort: Sort<O>): Promise<Paged<O>> {
-    const records = await this.queryMany(
-      sql`SELECT * FROM ${this.#table} ${filters.sort(sort)} ${filters.page(
-        page
-      )}`
+  async all<K extends keyof T>(
+    table: K,
+    page: Page,
+    sort: Sort<T[K]>
+  ): Promise<Paged<T[K]>> {
+    const records = await this.queryMany<T[K]>(
+      sql`SELECT * FROM ${raw(table as string)} ${filters.sort(
+        sort
+      )} ${filters.page(page)}`
     )
 
     return {
-      records,
+      records: records ?? [],
       index: page.index,
       length: page.length,
-      total: records.length,
+      total: records?.length ?? 0,
     }
   }
 
-  async insert(data: OptionalId<O>) {
+  async update<K extends keyof T>(table: K, id: number, data: Partial<T[K]>) {
+    const existing = await this.findById(table, id)
+
+    if (!existing) {
+      throw new Error(`Unable to find a record with id "${id}"`)
+    }
+
+    const updates: Partial<T[K]> = {}
+
+    for (const key of Object.keys(data)) {
+      // @ts-ignore: To keep this readable, omitting "key as
+      // keyof blah blah who gives a shit"
+      if (existing[key] == null && data[key] != null) {
+        // @ts-ignore: same as above
+        updates[key] = data[key]
+      }
+    }
+
+    if (Object.keys(updates).length) {
+      const keys = Object.keys(updates)
+
+      let query = sql`UPDATE ${raw(table as string)} SET`
+
+      for (const key of keys) {
+        query = sql`
+          ${query},
+          ${raw(key)} = ${updates[key as keyof typeof updates]}
+        `
+      }
+
+      query = sql`
+        ${query}
+        WHERE id = ${String(id)}
+      `
+
+      await this.run(query)
+
+      return {
+        ...updates,
+        id,
+      } as T[K]
+    }
+  }
+
+  async insert<K extends keyof T, R extends { id: number } = T[K]>(
+    table: K,
+    data: OptionalId<R>
+  ) {
     const cols = Object.keys(data)
     const vals = Object.values(data)
 
     const id = await this.run(
-      sql`INSERT INTO ${this.#table} (${raw(cols.toString())}) VALUES ${bulk([
-        vals,
-      ])}`
+      sql`INSERT INTO ${raw(table as string)} (${raw(
+        cols.toString()
+      )}) VALUES ${bulk([vals])}`
     )
 
     return {
       ...data,
       id,
-    }
+    } as R
   }
 
-  async findById(id: number): Promise<O | undefined> {
+  async findById<K extends keyof T>(
+    table: K,
+    id: number
+  ): Promise<T[K] | undefined> {
     if (typeof id !== 'number' || id < 0) {
       throw new Error('Invalid id')
     }
 
     return this.query(
-      sql`SELECT * FROM ${this.#table} WHERE id = ${raw(id.toString())}`
+      sql`SELECT * FROM ${raw(table as string)} WHERE id = ${raw(
+        id.toString()
+      )}`
     )
   }
 
-  async find<K extends keyof O>(col: K, value: O[K]) {
-    const result = await this.query(
-      sql`SELECT * FROM ${this.#table} WHERE ${raw(String(col))} = ${value}`
+  async find<K extends keyof T, R = T[K]>(
+    table: K,
+    col: keyof R,
+    value: R[typeof col]
+  ) {
+    const result = await this.query<R>(
+      sql`SELECT * FROM ${raw(table as string)} WHERE ${raw(
+        String(col)
+      )} = ${value}`
     )
 
     return result
   }
 
-  findAll<K extends keyof O>(col: K, value: O[K]) {
-    return this.queryMany(
-      sql`SELECT * FROM ${this.#table} WHERE ${raw(String(col))} = ${value}`
+  findAll<K extends keyof T, R = T[K]>(
+    table: K,
+    col: keyof R,
+    value: R[typeof col]
+  ) {
+    return this.queryMany<R>(
+      sql`SELECT * FROM ${raw(table as string)} WHERE ${raw(
+        String(col)
+      )} = ${value}`
     )
   }
 }

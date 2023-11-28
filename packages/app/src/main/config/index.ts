@@ -15,3 +15,4 @@ const config = new ConfigStore({
 export default config
 
 export * from './constants'
+export { default as paths } from './paths'

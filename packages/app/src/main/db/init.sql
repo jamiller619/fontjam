@@ -28,7 +28,10 @@ CREATE TABLE IF NOT EXISTS families (
   name TEXT NOT NULL,
   tags JSON,
   copyright TEXT,
+  designer TEXT,
+  license TEXT,
   popularity INTEGER,
+  version INTEGER,
   FOREIGN KEY(libraryId) REFERENCES libraries(id) ON DELETE CASCADE,
   UNIQUE(libraryId, name)
 );

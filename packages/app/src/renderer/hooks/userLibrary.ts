@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
 import { useSessionStorage } from 'usehooks-ts'
 import { Library } from '@shared/types'
 import api from '~/utils/api'
@@ -35,29 +34,21 @@ export function useLibrary(id?: string | number | null) {
   return libraries.find((l) => l.id === nid)
 }
 
-function useSetActiveLibraryId(id?: number) {
-  const params = useParams()
-  const activeId = id || Number(params.id) || 1
+export function useFamilies(page = 0, pageSize: number, id: number) {
+  const { data } = useAPI('get.families', [
+    id,
+    { index: page, length: pageSize },
+  ])
   const [state, setState] = useAppState()
 
   useEffect(() => {
-    if (state['library.active.id'] !== activeId) {
+    if (id !== state['library.active.id']) {
       setState((prev) => ({
         ...prev,
-        'library.active.id': activeId,
+        'library.active.id': id,
       }))
     }
-  }, [activeId, setState, state])
+  }, [id, setState, state])
 
-  return activeId
-}
-
-export function useFamilies(page = 0, pageSize: number, id?: number) {
-  const activeId = useSetActiveLibraryId(id)
-  const { data } = useAPI('get.families', [
-    activeId,
-    { index: page, length: pageSize },
-  ])
-
-  return [data?.records, activeId] as const
+  return data
 }

@@ -162,6 +162,8 @@ export default function Family() {
 
   const fontData = useFontData(activeFont?.id, activeFont?.fullName)
 
+  console.log(fontData)
+
   useEffect(() => {
     if (activeFont != null || family == null) return
 

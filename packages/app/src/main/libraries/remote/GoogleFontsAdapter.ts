@@ -1,33 +1,76 @@
-import process from 'node:process'
-import { net } from 'electron'
 import logger from 'logger'
 import { Font, FontFamily, Library } from '@shared/types'
 import { FontRepository } from '~/db'
+import Stats from '~/lib/Stats'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
+import api from './GoogleFontsAPI'
 import RemoteAdapter from './RemoteAdapter'
-import { Webfont, WebfontList } from './types/google-fonts'
+import { Webfont } from './types'
 
 const log = logger('googlefonts.adapter')
+
+function parseVariant(variant: string) {
+  const resp = {
+    weight: 400,
+    style: 'regular',
+  }
+
+  if (variant === 'regular') {
+    return resp
+  }
+
+  if (variant === 'italic') {
+    resp.style = 'italic'
+
+    return resp
+  }
+
+  const strNum = variant.match(/[0-9]/g)?.join('') ?? ''
+  const weight = Number(strNum)
+  const style = variant.split(strNum).filter(Boolean).at(0)
+
+  if (!Number.isNaN(weight) && weight > 0) {
+    resp.weight = weight
+  }
+
+  if (style && style.trim()) {
+    resp.style = style.trim()
+  }
+
+  return resp
+}
 
 function map(libraryId: number) {
   const now = Date.now()
 
   return function mapFont(popularity: number, webfont: Webfont) {
-    const family: Omit<FontFamily<Omit<Font, 'id' | 'familyId'>>, 'id'> = {
+    const family: Omit<FontFamily, 'id' | 'fonts' | 'tags'> & {
+      tags: string | null
+      fonts: Omit<Font, 'id' | 'familyId'>[]
+    } = {
       libraryId,
       name: webfont.family,
       copyright: null,
       createdAt: now,
       popularity,
-      tags: null,
+      // "webfont.category" appears to be: monospace,
+      // sans-serif, etc.
+      tags: JSON.stringify([webfont.category]),
+      designer: null,
+      license: null,
+      // API always returns a string that starts with a "v",
+      // i.e. "v36", "v12", etc
+      version: Number(webfont.version.slice(1)),
       fonts: Object.entries(webfont.files).map(([variant, url]) => {
+        const { weight, style } = parseVariant(variant)
+
         const font: Omit<Font, 'id' | 'familyId'> = {
+          style,
+          weight,
           createdAt: now,
           path: url as string,
-          style: variant,
-          fullName: `${webfont.family} ${variant}`,
-          postscriptName: `${webfont.family}-${variant}`,
-          weight: null,
+          fullName: `${webfont.family} ${style}`.trim(),
+          postscriptName: null,
         }
 
         return font
@@ -38,69 +81,69 @@ function map(libraryId: number) {
   }
 }
 
-async function request<T>(url: string): Promise<T> {
-  log.info(`Requesting fonts from Google Fonts...`)
-
-  const response = await net.fetch(
-    `${url}&key=${process.env.GOOGLE_FONTS_API_KEY}`
-  )
-
-  if (response.ok) {
-    const body = await response.json()
-
-    return body
-  }
-
-  throw new Error(`Request error: "${response.status}:${response.statusText}"`)
-}
-
 export default class GoogleFontsAdapter
   extends RemoteAdapter
   implements LibraryAdapter
 {
-  async search(libraryId: number, query: string) {
+  override async search(libraryId: number, query: string) {
     console.log(libraryId, query)
     return [] as FontFamily[]
   }
 
-  matches(library: Library) {
+  override matches(library: Library) {
     return (
       library.type === 'remote' &&
       library.path.startsWith('https://www.googleapis.com/webfonts')
     )
   }
 
-  async initLibrary(library: Library) {
-    const url = `${library.path}?sort=popularity`
-    const resp = await request<WebfontList>(url)
-    const mapper = map(library.id)
+  override async initLibrary(library: Library) {
+    const stats = new Stats({
+      fontsCount: 0,
+      familiesCount: 0,
+    })
+      .on('start', () => {
+        log.info(`Scanning Google Fonts`)
+      })
+      .on('complete', () => {
+        log.info(
+          `Finished processing Google Fonts (processed ${stats.state.familiesCount} families and ${stats.state.fontsCount} fonts)`
+        )
 
-    let fontsCount = 0
-    let familiesCount = 0
+        this.emit('library.loaded', library)
+      })
+      .start()
+
+    const resp = await api.request()
+
+    if (!resp) return
+
+    const mapper = map(library.id)
 
     for await (const font of resp.items) {
       try {
-        const family = await FontRepository.findFamilyByName(font.family)
+        const family = await FontRepository.findFamilyByName(
+          library.id,
+          font.family
+        )
 
         if (family != null) {
           continue
         }
 
-        const mapped = mapper(familiesCount + 1, font)
+        const mapped = mapper(stats.state.familiesCount + 1, font)
 
-        await FontRepository.insertFamily(mapped)
+        await FontRepository.insertFamily(library.id, mapped)
 
-        familiesCount += 1
-        fontsCount += mapped.fonts.length
+        stats.update(({ familiesCount, fontsCount }) => ({
+          familiesCount: familiesCount + 1,
+          fontsCount: fontsCount + mapped.fonts.length,
+        }))
       } catch (err) {
         log.error(`Unable to parse Google Font "${font.family}"`, err as Error)
       }
     }
 
-    log.info(
-      `Finished processing Google Fonts (processed ${familiesCount} families and ${fontsCount} fonts)`
-    )
-
-    this.emit('library.loaded', library)
+    stats.complete()
   }
 }

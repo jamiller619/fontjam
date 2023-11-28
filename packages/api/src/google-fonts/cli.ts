@@ -1,48 +1,37 @@
 #!/usr/bin/env node
-import cp from 'node:child_process'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { promisify } from 'node:util'
+import { createGitter } from '~/gitter'
 import { Metadata, parse } from './MetadataParser'
 
 const GIT_PATH = process.env.GOOGLE_FONTS_GIT_PATH
-const exec = promisify(cp.exec)
+const git = await createGitter('https://github.com/google/fonts', GIT_PATH)
 
-console.log(`Running git pull @ "${GIT_PATH}"`)
+const gitpull = await git('pull')
 
-const gitpull = await exec('git pull', {
-  cwd: GIT_PATH,
-})
+if (!gitpull) process.exit(1)
 
-if (gitpull.stderr) {
-  console.error(`Error during "git pull"`, gitpull.stderr)
+const gitls = await git('ls-files')
 
-  process.exit(1)
-}
+if (!gitls) process.exit(1)
 
-console.log('git up-to-date, generating font list now...')
+const files = gitls.split('\n')
 
-const gitls = await exec('git ls-files', {
-  cwd: GIT_PATH,
-})
+// These are the known directories within the repo that
+// contain the fonts, in addition to any metadata
+const fontDirectories = ['apache', 'ofl', 'ufl']
 
-if (gitls.stderr) {
-  console.error(`Error during "git ls-files"`, gitls.stderr)
-
-  process.exit(1)
-}
-
-const files = gitls.stdout.split('\n')
-const dirs = ['apache', 'ofl', 'ufl']
 const fonts: Record<string, Metadata> = {}
 
 for (const file of files) {
   try {
+    // If we can coerse to false, probably not a file ;)
     if (!file) continue
 
+    // If file isn't in a known directory, skip it
     let shouldContinue = true
-    for (const dir of dirs) {
+    for (const dir of fontDirectories) {
       if (file.startsWith(dir)) {
         shouldContinue = false
       }
@@ -50,6 +39,7 @@ for (const file of files) {
 
     if (shouldContinue) continue
 
+    // The font name is the name of the first directory
     const [_, fontName] = file.split('/')
 
     if (!fontName) continue
@@ -69,6 +59,9 @@ for (const file of files) {
   }
 }
 
-console.log('Writing json file now...')
+console.log('Writing json file...')
 
-await fs.writeFile('dist/fonts.json', JSON.stringify(fonts, null, 2))
+await fs.writeFile(
+  process.env.GOOGLE_FONTS_JSON_SAVE_PATH,
+  JSON.stringify(fonts, null, 2)
+)

@@ -1,16 +1,16 @@
-import { Flex, Portal, Text } from '@radix-ui/themes'
-import { Fragment, useEffect, useState } from 'react'
+import { Flex, Text } from '@radix-ui/themes'
+import { Fragment, RefObject, useEffect, useRef, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
-import { Outlet } from 'react-router-dom'
 import styled from 'styled-components'
-import { FontFamily } from '@shared/types'
+import useScrollPosition from '~/hooks/useScrollPosition'
 import { useFamilies } from '~/hooks/userLibrary'
 import { fadein } from '~/style/keyframes'
+import { clamp } from '~/utils/number'
 import Grid from './Grid'
 import Header from './Header'
 
 type LibraryProps = {
-  id?: number
+  id: number
 }
 
 const NoResultsContainer = styled(Flex)`
@@ -27,75 +27,77 @@ const NoResultsContainer = styled(Flex)`
   }
 `
 
-type State = {
-  [libraryId: number]: {
-    [page: number]: FontFamily[]
-  }
+type UseWindowedFamiliesOptions<T extends HTMLElement> = {
+  ref: RefObject<T>
+  totalItems?: number
+  itemHeight?: number
+  windowRows?: number
 }
 
-export default function Library(props: LibraryProps) {
+function useWindowedList<T extends HTMLElement>({
+  ref,
+  totalItems,
+  itemHeight,
+  windowRows,
+}: UseWindowedFamiliesOptions<T>) {
+  const [[start, end], setState] = useState([0, 0])
+  const top = useScrollPosition(ref, 200)
+
+  useEffect(() => {
+    const clampValue = (num: number) => {
+      return clamp(num, 0, totalItems ?? 0)
+    }
+
+    const newStart = clampValue(Math.floor(top / (itemHeight ?? 0)))
+
+    if (newStart !== start) {
+      const newEnd = (windowRows ?? 0) + newStart
+      setState([newStart, clampValue(newEnd)])
+    }
+  }, [itemHeight, start, top, totalItems, windowRows])
+
+  return [start, end]
+}
+
+const PAGE_SIZE = 36
+
+function useWindowedFamilies(libraryId: number, ref: RefObject<HTMLElement>) {
   const [page, setPage] = useState(0)
-  const [families, id] = useFamilies(page, 48, props.id)
-  const [data, setData] = useState<State>({ [id]: {} })
-  const { ref, inView } = useInView({
-    threshold: 0,
+  const data = useFamilies(page, PAGE_SIZE, libraryId)
+  const virtual = new Array(data?.total).fill(false)
+  const [start, end] = useWindowedList({
+    ref,
+    totalItems: data?.total ? Math.ceil(data.total / 4) : 0,
+    itemHeight: 200,
+    windowRows: 4,
   })
 
-  useEffect(() => {
-    if (families?.length && data[id]?.[page] == null) {
-      setData((prev) => ({
-        ...prev,
-        [id]: {
-          ...prev[id],
-          [page]: families,
-        },
-      }))
-    }
-  }, [data, families, page, id])
+  return virtual.map((_, i) =>
+    i >= start * 4 && i < end * 4 ? data?.records.at(i) : undefined
+  )
+}
 
-  useEffect(() => {
-    if (inView && data[id]?.[page + 1] == null && data[id]?.[page] != null) {
-      setPage((prev) => prev + 1)
-    }
-  }, [data, inView, page, id])
+export default function Library({ id }: LibraryProps) {
+  const { ref: pageRef, inView } = useInView({
+    threshold: 0,
+  })
+  const scrollRef = useRef(null)
+  const data = useWindowedFamilies(id, scrollRef)
+  // const [start, end] = useWindowedList({
+  //   ref: scrollRef,
+  //   totalItems: data?.total ? Math.ceil(data.total / 4) : 0,
+  //   itemHeight: 200,
+  //   windowRows: 4,
+  // })
 
-  // const [data, setData] = useState(families)
-  // const [searchText] = useSearch()
-  // const isMounted = useIsMounted()
-
-  // useEffect(() => {
-  //   if (searchText) {
-  //     window.api['search.fonts'](id, searchText)
-  //       .then((res) => {
-  //         if (isMounted()) {
-  //           setData(res.map((r) => r.item))
-  //         }
-  //       })
-  //       .catch(console.error)
-  //   } else {
-  //     setData(families)
-  //   }
-  // }, [families, id, isMounted, searchText])
-
-  const el = document.querySelector(
-    '[data-is-root-theme="true"]'
-  ) as HTMLElement | null
+  // console.log(start, end)
 
   return (
     <Fragment>
       <Header />
-      {Object.keys(data[id] ?? {}).length > 0 ? (
-        <Grid data={Object.values(data[id]).flat()}>
-          <div ref={ref} />
-        </Grid>
-      ) : (
-        <NoResultsContainer>
-          <Text size="3">Nothing much to show here...</Text>
-        </NoResultsContainer>
-      )}
-      <Portal container={el}>
-        <Outlet />
-      </Portal>
+      <Grid data={data} ref={scrollRef}>
+        <div ref={pageRef} />
+      </Grid>
     </Fragment>
   )
 }

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { app } from 'electron'
+import { Menu, app } from 'electron'
 import logger from 'logger'
 import { formatMs } from '@shared/utils/datetime'
 import api from '~/api'
@@ -11,6 +11,9 @@ const log = logger('app.index')
 
 let win: MainWindow | null = null
 
+// https://github.com/electron/electron/issues/35512
+Menu.setApplicationMenu(null)
+
 registerProtocolSchemes()
 
 async function onReady() {
@@ -21,8 +24,6 @@ async function onReady() {
   win = new MainWindow()
 
   api.init(win)
-
-  await win.show()
 
   const protocols = await import('~/protocols')
 

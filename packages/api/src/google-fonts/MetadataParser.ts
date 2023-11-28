@@ -8,12 +8,12 @@ export type MetadataFont = {
   full_name: string
 }
 
-export type Axis = {
+type Axis = {
   min: number
   max: number
 }
 
-export type Axes = Record<string, Axis>
+type Axes = Record<string, Axis>
 
 export type Metadata = {
   name: string
@@ -23,9 +23,6 @@ export type Metadata = {
   date_added: string
   fonts: MetadataFont[]
   subsets: string[]
-  // This was originally a property of the Font, but
-  // considering the vast majority are duplicates, moving it
-  // up to the family will reduce storage
   copyright: string
   // Category and Classifications appear to duplicate values
   category: string
@@ -34,7 +31,7 @@ export type Metadata = {
   axes?: Axes
 }
 
-const MetadataKeys = [
+const MetadataKeys: (keyof Metadata)[] = [
   'name',
   'designer',
   'license',
@@ -44,7 +41,7 @@ const MetadataKeys = [
   'subsets',
   'classifications',
   'copyright',
-] as (keyof Metadata)[]
+]
 
 const MetadataFontKeys = [
   'style',
@@ -58,8 +55,18 @@ function trim(parts: string[]) {
   return parts.map((p) => p.trim()).filter(String)
 }
 
+function parseStringValue(val: string) {
+  return val.replaceAll('"', '')
+}
+
+function parseNumberValue(val: string) {
+  const num = Number(val)
+
+  return Number.isNaN(num) ? undefined : num
+}
+
 function parseFont(lines: string[]) {
-  const resp: Record<string, string> = {}
+  const resp: Record<string, string | number> = {}
   let line
   let copyright
 
@@ -71,11 +78,20 @@ function parseFont(lines: string[]) {
     if (!key || !value) continue
 
     if (key === 'copyright') {
-      copyright = value
+      copyright = parseStringValue(value)
+    }
+
+    // the only number value appears to be "weight"
+    if (key === 'weight') {
+      const weight = parseNumberValue(value)
+
+      if (weight != null) {
+        resp.weight = weight
+      }
     }
 
     if (MetadataFontKeys.includes(key as keyof MetadataFont)) {
-      resp[key] = value.replaceAll('"', '')
+      resp[key] = value
     }
   }
 
@@ -122,6 +138,7 @@ export async function parse(filePath: string) {
 
     if (!line) continue
 
+    // Split the string only on the first occurance of a colon.
     const [key, value] = trim(line.split(/:(.*)/s))
 
     if (line === 'fonts {') {
@@ -144,9 +161,9 @@ export async function parse(filePath: string) {
     } else if (MetadataKeys.includes(key as keyof Metadata)) {
       if (key === 'subsets' || key === 'classifications') {
         resp[key] ??= []
-        resp[key].push(value.replaceAll('"', ''))
+        resp[key].push(parseStringValue(value))
       } else {
-        resp[key] = value.replaceAll('"', '')
+        resp[key] = parseStringValue(value)
       }
     }
   }
