@@ -1,6 +1,6 @@
 import logger from 'logger'
 import { Font, FontFamily, Library } from '@shared/types'
-import { FontRepository } from '~/db'
+import { FontRepository, timestamp } from '~/db'
 import Stats from '~/lib/Stats'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
 import api from './GoogleFontsAPI'
@@ -41,7 +41,7 @@ function parseVariant(variant: string) {
 }
 
 function map(libraryId: number) {
-  const now = Date.now()
+  const now = timestamp.toStorage(Date.now())
 
   return function mapFont(popularity: number, webfont: Webfont) {
     const family: Omit<FontFamily, 'id' | 'fonts' | 'tags'> & {

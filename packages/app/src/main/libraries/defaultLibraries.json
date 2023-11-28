@@ -23,12 +23,14 @@
     {
       "name": "Favorites",
       "icon": "fluentui/Heart20Filled",
-      "isEditable": 0
+      "isEditable": 0,
+      "path": "%collections%/favorites"
     },
     {
       "name": "Recently Added",
       "icon": "fluentui/Clock20Filled",
-      "isEditable": 0
+      "isEditable": 0,
+      "path": "view://recentlyAdded"
     }
   ]
 }

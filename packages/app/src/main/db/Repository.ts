@@ -36,20 +36,20 @@ export default class Repository<
     })
   }
 
-  // queryMany<K extends keyof T>(query: Sql) {
-  //   return new Promise<T[K][]>((resolve, reject) => {
-  //     db.all(query.text, query.values, function callback(err, rows) {
-  //       if (err) reject(err)
-  //       else resolve((rows as T[K][]) ?? [])
-  //     })
-  //   })
-  // }
-
   run(query: Sql) {
     return new Promise<number>((resolve, reject) => {
       db.run(query.text, query.values, function callback(err) {
         if (err) reject(err)
         else resolve(this.lastID)
+      })
+    })
+  }
+
+  exec(query: string) {
+    return new Promise<void>((resolve, reject) => {
+      db.exec(query, function callback(err) {
+        if (err) reject(err)
+        else resolve()
       })
     })
   }

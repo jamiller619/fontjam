@@ -1,9 +1,10 @@
 import { Transform } from 'node:stream'
-import sql, { Sql, bulk, raw } from 'sql-template-tag'
-import { BaseFont, Font, FontFamily, Page, Paged } from '@shared/types'
+import sql, { Sql, bulk, empty, raw } from 'sql-template-tag'
+import { BaseFont, Font, FontFamily, Page } from '@shared/types'
 import groupBy from '@shared/utils/groupBy'
 import Repository from './Repository'
-import filters from './filters'
+import filters, { createPagedResponse } from './filters'
+import * as timestamp from './timestamp'
 
 type TableMap = {
   fonts: Font
@@ -18,7 +19,7 @@ type FontFamilyJoin = TableMap['families'] &
     fontCreatedAt: number
   }
 
-const fontFamilyJoinQuery = (subQuery: Sql) => sql`
+const fontFamilyJoinQuery = (subQuery?: Sql, table = 'families') => sql`
   SELECT
     families.id,
     families.createdAt,
@@ -38,8 +39,8 @@ const fontFamilyJoinQuery = (subQuery: Sql) => sql`
     fonts.weight
   FROM (
     SELECT *
-    FROM families
-    ${subQuery}
+    FROM ${raw(table)}
+    ${subQuery ?? empty}
   ) as families
   join fonts
   on families.id = fonts.familyId
@@ -94,7 +95,7 @@ class FontRepository extends Repository<TableMap> {
     if (familyRecord == null) {
       return this.insert('families', {
         ...data,
-        createdAt: Date.now(),
+        createdAt: timestamp.toStorage(Date.now()),
         libraryId,
       })
     }
@@ -131,7 +132,7 @@ class FontRepository extends Repository<TableMap> {
         } else {
           await this.insert('fonts', {
             ...font,
-            createdAt: Date.now(),
+            createdAt: timestamp.toStorage(Date.now()),
             familyId: record.id,
           })
         }
@@ -148,7 +149,7 @@ class FontRepository extends Repository<TableMap> {
     const { id } = await this.insert('families', {
       ...family,
       libraryId,
-      createdAt: Date.now(),
+      createdAt: timestamp.toStorage(Date.now()),
     })
 
     const keys = ['familyId', ...Object.keys(data.fonts.at(0)!)]
@@ -172,14 +173,7 @@ class FontRepository extends Repository<TableMap> {
     const total = await this.countFamilies(libraryId)
     const records = mapFontFamilyJoins(data)
 
-    const response: Paged<FontFamily> = {
-      total,
-      records,
-      index: page.index,
-      length: records.length,
-    }
-
-    return response
+    return createPagedResponse(total, page.index, records)
   }
 
   findFamilyByName(libraryId: number, name: string) {
@@ -230,6 +224,30 @@ class FontRepository extends Repository<TableMap> {
     const result = await this.query<{ total: number }>(query)
 
     return result?.total ?? 0
+  }
+
+  async executeView(viewName: string, page: Page) {
+    const pageQuery = sql`
+      ${filters.page(page)}
+    `
+    const query = sql`
+      ${fontFamilyJoinQuery(pageQuery, viewName)}
+    `
+    const countQuery = sql`
+      SELECT COUNT(*) AS total
+      FROM ${raw(viewName)}
+    `
+
+    const count = await this.query<{ total: number }>(countQuery)
+
+    if (!count) {
+      throw new Error(`Unable to determine count total for view "${viewName}"`)
+    }
+
+    const records = await this.queryMany<FontFamilyJoin>(query)
+    const mapped = mapFontFamilyJoins(records)
+
+    return createPagedResponse(count.total, page.index, mapped)
   }
 }
 

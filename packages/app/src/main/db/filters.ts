@@ -1,5 +1,5 @@
 import sql, { raw } from 'sql-template-tag'
-import { Page, Sort } from '@shared/types'
+import { Page, Paged, Sort } from '@shared/types'
 
 const filters = {
   sort<T>(sort: Sort<T>) {
@@ -13,3 +13,18 @@ const filters = {
 }
 
 export default filters
+
+export function createPagedResponse<T>(
+  total: number,
+  index: number,
+  records: T[]
+) {
+  const resp: Paged<T> = {
+    total,
+    records,
+    index,
+    length: records.length,
+  }
+
+  return resp
+}

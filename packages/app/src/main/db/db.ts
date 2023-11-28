@@ -1,11 +1,10 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { app } from 'electron'
 import logger from 'logger'
 import sqlite from 'sqlite3'
-import { name } from '@root/package.json'
 import { IS_DEV } from '~/config'
-import init from './init.sql'
+import { paths } from '~/config'
+import schema from './schema.sql'
 
 if (IS_DEV) {
   sqlite.verbose()
@@ -13,8 +12,7 @@ if (IS_DEV) {
 
 const log = logger('db')
 
-const appData = app.getPath('appData')
-const fileName = path.join(appData, name, 'databases', `fontjam.db`)
+const fileName = path.join(paths.data, 'databases', 'fontjam.db')
 
 await fs.mkdir(path.dirname(fileName), {
   recursive: true,
@@ -27,7 +25,7 @@ const db = await new Promise<sqlite.Database>((resolve, reject) => {
     if (err) {
       reject(err)
     } else {
-      db.exec(init, (err) => {
+      db.exec(schema, (err) => {
         if (err) reject(err)
 
         resolve(db)
@@ -35,9 +33,5 @@ const db = await new Promise<sqlite.Database>((resolve, reject) => {
     }
   })
 })
-
-if (IS_DEV) {
-  // db.on('trace', log.info.bind(log))
-}
 
 export default db

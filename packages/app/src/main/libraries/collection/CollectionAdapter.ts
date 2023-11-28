@@ -1,23 +1,55 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { Library } from '@shared/types'
-import slugify from '@shared/utils/slugify'
+import { FontFamily, Library, Page, Paged } from '@shared/types'
 import { paths } from '~/config'
-import { LibraryRepository } from '~/db'
+import { FontRepository, LibraryRepository } from '~/db'
 import CommonAdapter from '~/libraries/CommonAdapter'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
 import { collection as defaultCollections } from '~/libraries/defaultLibraries.json'
+import * as views from './views'
 
-async function resolvePath(collectionName: string) {
-  const file = path.normalize(
-    `${paths.data}/collections/${slugify(collectionName)}.json`
+type CollectionType = 'view' | 'folder'
+
+function resolveViewName(libraryPath: string) {
+  return libraryPath.split('view://').filter(Boolean).at(0)
+}
+
+function resolveCollectionType(collectionPath: string): CollectionType {
+  if (collectionPath.startsWith('view://')) {
+    return 'view'
+  }
+
+  return 'folder'
+}
+
+async function initView(viewPath: string) {
+  const view = resolveViewName(viewPath)
+
+  if (!view || !Object.hasOwn(views, view)) {
+    throw new Error(`Unable to initialize view for "${viewPath}"`)
+  }
+
+  const sql = views[view as keyof typeof views]
+
+  await LibraryRepository.exec(sql)
+}
+
+async function resolvePath(collectionPath: string) {
+  const type = resolveCollectionType(collectionPath)
+
+  if (type === 'view') {
+    await initView(collectionPath)
+
+    return collectionPath
+  }
+
+  const resolved = path.normalize(
+    collectionPath.replace('%collections%', `${paths.data}/collections`)
   )
 
-  await fs.mkdir(path.dirname(file), {
-    recursive: true,
-  })
+  await fs.mkdir(resolved, { recursive: true })
 
-  return file
+  return resolved
 }
 
 export default class CollectionAdapter
@@ -30,6 +62,20 @@ export default class CollectionAdapter
 
   override async init() {
     await super.init('collection')
+  }
+
+  override async getFamilies(library: Library, page: Page) {
+    const type = resolveCollectionType(library.path)
+
+    if (type === 'view') {
+      const view = resolveViewName(library.path)
+
+      if (view) {
+        return FontRepository.executeView(view, page)
+      }
+    }
+
+    return {} as Paged<FontFamily>
   }
 
   async initLibrary(library: Library) {
@@ -45,7 +91,7 @@ export default class CollectionAdapter
         isEditable: collection.isEditable as 0 | 1,
         name: collection.name,
         type: 'collection',
-        path: await resolvePath(collection.name),
+        path: await resolvePath(collection.path),
       })
     }
   }
