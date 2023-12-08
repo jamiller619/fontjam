@@ -1,8 +1,8 @@
 import { handle } from '@shared/ipc'
 import { NotReadyErr } from '@shared/utils/error'
-import initProviders from '~/providers/init'
 import type MainWindow from './MainWindow'
 import autobind from './autobind'
+import fork from './lib/fork'
 
 const NotReady = () => NotReadyErr
 
@@ -26,11 +26,9 @@ export default {
     const { default: ReadRepository } = await import('~/db/ReadRepository')
 
     const conn = connect()
-    // const { initAdapters, getFamilies } = await import(
-    //   '~/libraries/LibraryAdapter'
-    // )
 
-    // handle('create.library', LibraryRepository.create.bind(LibraryRepository))
+    await fork('dist/providers/defaults.worker.js', 'defaults.worker')
+
     handle(
       'get.libraries',
       autobind(conn, ReadRepository.getLibraries.bind(ReadRepository)),
@@ -52,6 +50,8 @@ export default {
     )
 
     const libraries = await ReadRepository.getLibraries(conn)
+
+    const { default: initProviders } = await import('~/providers/init')
 
     await initProviders(libraries)
 

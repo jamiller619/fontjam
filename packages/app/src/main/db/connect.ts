@@ -3,6 +3,7 @@ import path from 'node:path'
 import sqlite from 'sqlite3'
 import paths from '~/config/paths'
 import Driver from './Driver'
+import schema from './schema.sql'
 
 const fileName = path.join(paths.data, 'databases', 'fontjam.db')
 
@@ -13,7 +14,12 @@ await fs.mkdir(path.dirname(fileName), {
 const db = await new Promise<sqlite.Database>((resolve, reject) => {
   sqlite.cached.Database(fileName, function onCreateCallback(err) {
     if (err) reject(err)
-    else resolve(this)
+
+    this.exec(schema, (err) => {
+      if (err) reject(err)
+
+      resolve(this)
+    })
   })
 })
 

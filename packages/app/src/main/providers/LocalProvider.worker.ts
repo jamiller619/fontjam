@@ -84,7 +84,7 @@ for await (const [familyName, fonts] of families) {
     license: ref.license,
     name: familyName,
     popularity: null,
-    tags: ref.tags ? JSON.parse(ref.tags) : null,
+    tags: ref.tags ? JSON.stringify(ref.tags) : null,
     version: null,
     fonts: fonts.map((font) => ({
       fullName: font.fontName,

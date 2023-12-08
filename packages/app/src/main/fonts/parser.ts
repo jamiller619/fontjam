@@ -1,5 +1,9 @@
 import opentype from 'opentype.js'
-import { FontVariation } from '@shared/types'
+import {
+  FontVariation,
+  FontVariationAxis,
+  FontVariationInstance,
+} from '@shared/types'
 import { slugify } from '@shared/utils/string'
 
 function toArrayBuffer(buffer: Buffer) {
@@ -35,17 +39,45 @@ function parseTags(names: opentype.FontNames) {
   const result = slugify(tag)
 
   if (result) {
-    return JSON.stringify([result])
+    return [result]
   }
 
   return null
+}
+
+function parseFVar(table: opentype.Table | undefined) {
+  if (!table) return null
+
+  const axes: FontVariationAxis[] = table.axes?.map(
+    (axis: Record<string, unknown>) => ({
+      tag: axis?.tag,
+      minValue: axis?.minValue,
+      defaultValue: axis?.defaultValue,
+      maxValue: axis?.maxValue,
+      name: getName(axis?.name as opentype.LocalizedName),
+    }),
+  )
+
+  const instances: FontVariationInstance[] = table.instances?.map(
+    (inst: Record<string, unknown>) => ({
+      name: getName(inst.name as opentype.LocalizedName),
+      coordinates: inst.coordinates,
+    }),
+  )
+
+  const fvar: FontVariation = {
+    axes,
+    instances,
+  }
+
+  return fvar
 }
 
 export type ParsedFont = {
   fontName: string
   familyName: string
   path: string
-  tags: string | null
+  tags: string[] | null
   postscriptName: string | null
   style: string
   copyright: string | null
@@ -53,15 +85,6 @@ export type ParsedFont = {
   license: string | null
   fvar: FontVariation | null
   fileCreatedAt: number | null
-}
-
-function parseFVar(table: opentype.Table | undefined) {
-  if (!table) return null
-
-  const fvar: FontVariation = {
-    // axes: table.,
-    instances: [],
-  }
 }
 
 export function parse(
