@@ -1,43 +1,45 @@
 import { Box } from '@radix-ui/themes'
-import {
-  ForwardedRef,
-  HTMLAttributes,
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-} from 'react'
+import { ForwardedRef, HTMLAttributes, forwardRef } from 'react'
 import { styled } from 'styled-components'
+import { Font } from '@shared/types'
 import { useFontFace } from '~/hooks/useFontData'
 
-type PreviewProps = Omit<HTMLAttributes<HTMLDivElement>, 'id'> & {
-  id?: number
-  name?: string
+type PreviewProps = HTMLAttributes<HTMLDivElement> & {
+  font?: Font
   size?: number
   children?: string
 }
 
-const Container = styled(Box)<{ $name?: string; $size?: number }>`
+type ContainerProps = {
+  $name?: string
+  $size?: number
+}
+
+function renderContainerAttributes(props: ContainerProps) {
+  return {
+    style: {
+      fontFamily: props.$name,
+      fontSize: props.$size,
+    },
+  }
+}
+
+const Container = styled(Box).attrs<ContainerProps>(renderContainerAttributes)`
   flex-grow: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: '${({ $name }) => $name}';
-  font-size: ${({ $size }) => $size}px;
+  line-height: 1.3;
 `
 
 export default forwardRef(function Preview(
   props: PreviewProps,
-  outerRef: ForwardedRef<HTMLDivElement>
+  ref: ForwardedRef<HTMLDivElement>
 ) {
-  const { id, name, size, ...restProps } = props
-  const isLoaded = useFontFace(id, name)
-  const innerRef = useRef<HTMLDivElement>(null)
+  const { font, size, ...restProps } = props
+  const isLoaded = useFontFace(font)
 
-  useImperativeHandle(outerRef, () => innerRef.current as HTMLDivElement, [
-    innerRef,
-  ])
-
-  return isLoaded && name ? (
-    <Container {...restProps} $name={name} $size={size} ref={innerRef}>
+  return isLoaded ? (
+    <Container {...restProps} $name={font?.fullName} $size={size} ref={ref}>
       {props.children}
     </Container>
   ) : null

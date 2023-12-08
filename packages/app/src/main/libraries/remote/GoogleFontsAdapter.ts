@@ -1,11 +1,12 @@
 import logger from 'logger'
 import { Font, FontFamily, Library } from '@shared/types'
-import { FontRepository, timestamp } from '~/db'
+import { toUnixTime } from '@shared/utils/datetime'
+import { FontRepository } from '~/db'
 import Stats from '~/lib/Stats'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
-import api from './GoogleFontsAPI'
+import api from '../../providers/GoogleFontsAPI'
+import { Webfont } from '../../providers/types'
 import RemoteAdapter from './RemoteAdapter'
-import { Webfont } from './types'
 
 const log = logger('googlefonts.adapter')
 
@@ -41,7 +42,7 @@ function parseVariant(variant: string) {
 }
 
 function map(libraryId: number) {
-  const now = timestamp.toStorage(Date.now())
+  const now = toUnixTime()
 
   return function mapFont(popularity: number, webfont: Webfont) {
     const family: Omit<FontFamily, 'id' | 'fonts' | 'tags'> & {
@@ -107,10 +108,8 @@ export default class GoogleFontsAdapter
       })
       .on('complete', () => {
         log.info(
-          `Finished processing Google Fonts (processed ${stats.state.familiesCount} families and ${stats.state.fontsCount} fonts)`
+          `Finished processing Google Fonts (added ${stats.state.familiesCount} families and ${stats.state.fontsCount} fonts)`,
         )
-
-        this.emit('library.loaded', library)
       })
       .start()
 
@@ -124,7 +123,7 @@ export default class GoogleFontsAdapter
       try {
         const family = await FontRepository.findFamilyByName(
           library.id,
-          font.family
+          font.family,
         )
 
         if (family != null) {

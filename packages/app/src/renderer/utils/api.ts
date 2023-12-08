@@ -7,7 +7,9 @@ async function call<K extends APIKey, R extends Awaited<ReturnType<API[K]>>>(
   attempt = 0
 ): Promise<R> {
   if (attempt >= 9) {
-    throw new Error(`Unable to retreive results after 10 attempts`)
+    throw new Error(
+      `"${key}" failed -unable to retreive results after 10 attempts`
+    )
   }
 
   //@ts-ignore

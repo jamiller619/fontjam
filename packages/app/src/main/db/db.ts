@@ -2,8 +2,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import logger from 'logger'
 import sqlite from 'sqlite3'
-import { IS_DEV } from '~/config'
-import { paths } from '~/config'
+import { IS_DEV } from '~/config/constants'
+import paths from '~/config/paths'
 import schema from './schema.sql'
 
 if (IS_DEV) {

@@ -1,80 +1,91 @@
 import opentype from 'opentype.js'
 import { useEffect, useState } from 'react'
 import { useIsMounted } from 'usehooks-ts'
-import slugify from '@shared/utils/slugify'
+import { Font } from '@shared/types'
+import { slugify } from '@shared/utils/string'
 
 export function useFontURL(fontId?: number, fontName?: string) {
   if (!fontId || !fontName) return undefined
 
   const slug = slugify(fontName)
-  const url = `font://localhost/${slug}/?id=${fontId}`
+  const url = `font://localhost/${slug}?id=${fontId}`
 
   return url
 }
 
-function isFontLoaded(fontName?: string | null) {
-  if (!fontName) return false
+async function loadFontFace(fontName?: string, fontURL?: string) {
+  if (!fontName || !fontURL) return undefined
 
   try {
-    return document.fonts.check(`12px ${fontName}`)
-  } catch {
-    return false
+    const fontFace = new FontFace(fontName, `url("${fontURL}")`)
+
+    document.fonts.add(fontFace)
+
+    await fontFace.load()
+
+    return true
+  } catch (err) {
+    return err as Error
   }
 }
 
-export function useFontFace(fontId?: number, fontName?: string) {
-  const url = useFontURL(fontId, fontName)
-  const [isLoaded, setIsLoaded] = useState(isFontLoaded(fontName))
+function parseName(font?: Font) {
+  if (!font) return undefined
+
+  if (font.postscriptName) {
+    return font.postscriptName
+  }
+
+  return [font.fullName, font.weight ? null : font.style, font.weight]
+    .filter(Boolean)
+    .join(' ')
+}
+
+export function useFontFace(font?: Font) {
+  const fontName = parseName(font)
+  const url = useFontURL(font?.id, fontName)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
   const isMounted = useIsMounted()
 
   useEffect(() => {
-    if (isLoaded || !fontName || !url) return
-
-    if (isFontLoaded(fontName)) {
-      setIsLoaded(true)
-
+    if (!font || !url) {
       return
     }
 
-    // const fontFace = new FontFace(fontName, `url("${url}")`)
+    if (isLoaded) {
+      return
+    }
 
-    // document.fonts.add(fontFace)
+    loadFontFace(fontName, url).then((resp) => {
+      if (isMounted()) {
+        if (resp instanceof Error) {
+          setError(resp)
+        } else if (resp === true) {
+          setIsLoaded(true)
+        }
+      }
+    })
+  }, [font, fontName, isLoaded, isMounted, url])
 
-    // fontFace
-    //   .load()
-    //   .then(() => (isMounted() ? setIsLoaded(true) : null))
-    //   .catch((err) => {
-    //     console.error(err)
-    //   })
-  }, [fontName, isLoaded, isMounted, url])
-
-  return isLoaded
+  return error ?? isLoaded
 }
 
-const fontDataCache = new Map<string, opentype.Font>()
-
-export default function useFontData(fontId?: number, fontName?: string) {
-  const url = useFontURL(fontId, fontName)
-  const [fontData, setFontData] = useState<opentype.Font | null>(
-    url ? fontDataCache.get(url) ?? null : null
-  )
+export default function useFontData(font?: Font) {
+  const url = useFontURL(font?.id, font?.fullName)
+  const [fontData, setFontData] = useState<opentype.Font | null>(null)
   const isMounted = useIsMounted()
 
   useEffect(() => {
-    if (!url) return
+    if (!url || fontData) return
 
-    if (fontDataCache.has(url)) {
-      setFontData(fontDataCache.get(url)!)
-    } else {
-      fetch(url).then(async (res) => {
-        const font = opentype.parse(await res.arrayBuffer())
+    fetch(url).then(async (res) => {
+      const font = opentype.parse(await res.arrayBuffer())
 
-        if (isMounted()) {
-          fontDataCache.set(url, font)
-          setFontData(font)
-        }
-      })
-    }
+      if (isMounted()) {
+        setFontData(font)
+      }
+    })
   }, [isMounted, fontData, url])
 
   return fontData

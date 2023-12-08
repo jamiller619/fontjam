@@ -2,7 +2,7 @@ import { Flex, Separator, Text } from '@radix-ui/themes'
 import styled from 'styled-components'
 import useAPI from '~/hooks/useAPI'
 import useAppState from '~/hooks/useAppState'
-import { useLibrary } from '~/hooks/userLibrary'
+import { useLibrary } from '~/hooks/useLibrary'
 
 const Container = styled(Flex)`
   z-index: 1;

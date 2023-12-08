@@ -5,11 +5,12 @@ import {
 import { Flex, IconButton } from '@radix-ui/themes'
 import styled, { css } from 'styled-components'
 import { Library, LibraryType } from '@shared/types'
+import { capitalize } from '@shared/utils/string'
 import Logo from '~/components/Logo'
 import useAppState from '~/hooks/useAppState'
-import { useLibraries } from '~/hooks/userLibrary'
-import NavItem from './NavItem'
-import NavSection from './NavSection'
+import { useLibraries } from '~/hooks/useLibrary'
+import MenuItem from './MenuItem'
+import MenuSection from './MenuSection'
 
 const Container = styled(Flex)<{ $isOpen: boolean }>`
   flex-direction: column;
@@ -80,8 +81,8 @@ const StyledLogo = styled(Logo)`
   transform: translate(13px, 15px);
 `
 
-function createLibraryTypeGetter(library: Library[]) {
-  return function getLibraryType(type: LibraryType): Library[] | undefined {
+function createLibraryTypeFilter(library: Library[]) {
+  return function filterLibraryType(type: LibraryType): Library[] | undefined {
     return library.filter((c) => c.type === type)
   }
 }
@@ -89,10 +90,6 @@ function createLibraryTypeGetter(library: Library[]) {
 type LibrarySectionProps = {
   type: LibraryType
   data?: Library[]
-}
-
-function capitalize(str: string) {
-  return `${str[0].toUpperCase()}${str.slice(1)}`
 }
 
 function resolveLabelForType(type: LibraryType) {
@@ -104,22 +101,22 @@ function resolveLabelForType(type: LibraryType) {
 
 function LibrarySection({ type, data }: LibrarySectionProps) {
   return (
-    <NavSection label={resolveLabelForType(type)}>
+    <MenuSection label={resolveLabelForType(type)}>
       {data?.map((item) => (
-        <NavItem
+        <MenuItem
           key={item.id}
           href={`/library/${item.id}`}
           label={item.name}
           icon={item.icon}
         />
       ))}
-    </NavSection>
+    </MenuSection>
   )
 }
 
 export default function Menu() {
-  const library = useLibraries()
-  const getType = createLibraryTypeGetter(library)
+  const libraries = useLibraries()
+  const getLibraries = createLibraryTypeFilter(libraries)
 
   const [state, setAppState] = useAppState()
 
@@ -137,9 +134,9 @@ export default function Menu() {
         {state['menu.open'] ? <CollapseIcon /> : <ExpandIcon />}
       </ToggleButton>
       <Nav>
-        <LibrarySection type="local" data={getType('local')} />
-        <LibrarySection type="remote" data={getType('remote')} />
-        <LibrarySection type="collection" data={getType('collection')} />
+        <LibrarySection type="local" data={getLibraries('local')} />
+        <LibrarySection type="remote" data={getLibraries('remote')} />
+        <LibrarySection type="collection" data={getLibraries('collection')} />
       </Nav>
     </Container>
   )

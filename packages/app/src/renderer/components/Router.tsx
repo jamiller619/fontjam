@@ -27,6 +27,12 @@ const LibraryRouter = () => {
   return <Library id={Number(id)} />
 }
 
+const FamilyRouter = () => {
+  const { id } = useParams()
+
+  return <Family id={Number(id)} />
+}
+
 const routes: RouteObject[] = [
   {
     path: '/',
@@ -41,22 +47,14 @@ const routes: RouteObject[] = [
         element: <LibraryRouter />,
         children: [
           {
-            path: 'add/library',
-            element: <AddItem type="local" />,
-          },
-          {
-            path: 'add/remote',
-            element: <AddItem type="remote" />,
-          },
-          {
             path: 'add/collection',
             element: <AddItem type="collection" />,
           },
         ],
       },
       {
-        path: '/family/:libraryId/:name',
-        element: <Family />,
+        path: '/family/:id',
+        element: <FamilyRouter />,
       },
     ],
   },

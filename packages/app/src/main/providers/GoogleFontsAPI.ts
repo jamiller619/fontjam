@@ -3,7 +3,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { net } from 'electron'
 import logger from 'logger'
-import { paths } from '~/config'
+import paths from '~/config/paths'
 import { WebfontList } from './types'
 
 const log = logger('googlefonts.api')
@@ -62,7 +62,7 @@ export default {
       log.info(`Requesting fonts from Google Fonts...`)
 
       const response = await net.fetch(
-        `${BASE_URL}?sort=popularity&key=${process.env.GOOGLE_FONTS_API_KEY}`
+        `${BASE_URL}?sort=popularity&capability=VF&key=${process.env.GOOGLE_FONTS_API_KEY}`,
       )
 
       if (response.ok) {
@@ -74,7 +74,7 @@ export default {
       }
 
       throw new Error(
-        `Request error: "${response.status}:${response.statusText}"`
+        `Request error: "${response.status}:${response.statusText}"`,
       )
     } catch (err) {
       log.error(`Google Fonts API request failed`, err as Error)

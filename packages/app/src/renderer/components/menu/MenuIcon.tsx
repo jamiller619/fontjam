@@ -1,18 +1,22 @@
-import { SVGAttributes } from 'react'
-import * as lib from './lib'
+import { SVGAttributes, memo } from 'react'
+import * as lib from '~/components/icons/lib'
 
 const icons = await import('@fluentui/react-icons')
 
-type CustomIconProps = SVGAttributes<SVGSVGElement> & {
+type IconProps = SVGAttributes<SVGSVGElement> & {
   name: string
+  // isGrayscale?: boolean
 }
 
+// const iconStyle = (isGray = false) => ({
+//   width: 20,
+//   filter: isGray ? 'grayscale(1)' : '',
+// })
 const iconStyle = {
   width: 20,
-  filter: 'grayscale(1)',
 }
 
-export default function LibraryIcon({ name, ...props }: CustomIconProps) {
+function MenuIcon({ name, ...props }: IconProps) {
   const [iconLibrary, iconName] = name.split('/')
 
   if (iconLibrary === 'lib') {
@@ -34,3 +38,5 @@ export default function LibraryIcon({ name, ...props }: CustomIconProps) {
 
   return null
 }
+
+export default memo(MenuIcon)

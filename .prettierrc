@@ -20,5 +20,6 @@
     "topLevelAwait",
     "importAssertions",
     "explicitResourceManagement"
-  ]
+  ],
+  "plugins": ["@trivago/prettier-plugin-sort-imports"]
 }

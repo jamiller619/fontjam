@@ -1,12 +1,12 @@
 import process from 'node:process'
 import { Library } from '@shared/types'
+import data from '~/data/systemDirectories.json'
 import { LibraryRepository } from '~/db'
 import CommonAdapter from '~/libraries/CommonAdapter'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
 import { local as defaultLocalLibraries } from '~/libraries/defaultLibraries.json'
 import { buildIndex } from '~/libraries/search'
 import * as LocalScanner from './LocalScanner'
-import data from './systemDirectories.json'
 
 function resolveSystemFontDirs() {
   const { platform } = process
@@ -42,10 +42,8 @@ export default class LocalAdapter
     }
   }
 
-  async initLibrary(library: Library) {
+  override async initLibrary(library: Library) {
     await LocalScanner.scanLibrary(library)
-
-    this.emit('library.loaded', library)
   }
 
   override async init() {

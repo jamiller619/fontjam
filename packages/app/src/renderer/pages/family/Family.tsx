@@ -1,51 +1,52 @@
-import { ChevronLeft20Filled as IndexIcon } from '@fluentui/react-icons'
-import { Box, Flex, Heading, ScrollArea, Select, Tabs } from '@radix-ui/themes'
+import {
+  TextFont16Filled as GlyphIcon,
+  ChevronLeft20Filled as IndexIcon,
+  PreviewLink16Regular as PreviewIcon,
+} from '@fluentui/react-icons'
+import { Box, Flex, Heading, ScrollArea, Tabs } from '@radix-ui/themes'
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import Markdown from 'react-markdown'
+import { useSearchParams } from 'react-router-dom'
 import styled, { css, keyframes } from 'styled-components'
-import { useIsMounted } from 'usehooks-ts'
-import { FamilyFont } from '@shared/types'
+import type { Keyframes } from 'styled-components/dist/types'
+import { useLocalStorage } from 'usehooks-ts'
+import { Font } from '@shared/types'
 import AnimatedLink from '~/components/AnimatedLink'
 import { Preview } from '~/components/preview'
-import PreviewOptions from '~/components/preview/PreviewOptions'
 import useAPI from '~/hooks/useAPI'
-import useFontData from '~/hooks/useFontData'
-import Glyphs from './Glyphs'
-import Tables from './Tables'
+import { useAppStateTest } from '~/hooks/useAppState'
+import Glyphs from './components/Glyphs'
+import PreviewEditor from './components/PreviewEditor'
 
-const Container = styled(Box)`
-  /* background-color: var(--gray-3);
-  width: calc(100vw - 10vh);
-  height: calc(100vh - 10vh); */
-  view-transition-name: card;
-  /* overflow-y: auto;
-  overflow-x: hidden; */
-  /* position: fixed; */
-  /* inset: 5vh; */
-  /* -webkit-app-region: no-drag; */
-  z-index: 3;
-  /* border-radius: var(--radius-6); */
-  /* padding: var(--space-5); */
-  /* box-shadow: var(--shadow-5); */
+type FamilyProps = {
+  id: number
+}
+
+const Header = styled(Flex).attrs({
+  justify: 'between',
+})`
+  background: var(--gray-2);
+  padding: var(--space-5) var(--space-3) var(--space-2);
+  -webkit-app-region: drag;
 `
 
 const BackLink = styled(AnimatedLink)`
-  display: inline-flex;
+  display: flex;
   align-items: center;
   text-decoration: none;
   color: var(--accent-9);
+  -webkit-app-region: no-drag;
 `
 
 const PageHeading = styled(Heading).attrs({
-  size: '8',
+  size: '4',
 })`
-  margin-bottom: var(--space-2);
-  font-weight: 600;
+  font-weight: 500;
   view-transition-name: heading;
-  padding: 0 var(--space-3);
+  text-align: center;
 `
 
-const anim = keyframes`
+const fadein = keyframes`
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -58,41 +59,83 @@ const anim = keyframes`
 
 let staggerIndex = 0
 
-const fadeinStyles = () => {
+function staggerAnimation(keyFrames: Keyframes) {
   const delay = 200 + 100 * staggerIndex
 
   staggerIndex += 1
 
   return css`
-    animation: 200ms both ${delay}ms ease-in-out ${anim};
+    animation: 200ms both ${delay}ms ease-in-out ${keyFrames};
   `
 }
 
 const StyledPreview = styled(Preview)`
   view-transition-name: preview;
   margin: var(--space-3) 0;
-  padding: var(--space-2);
-  border: 1px solid var(--gray-5);
+  padding: var(--space-5);
+  border: var(--default-border);
+  background: var(--gray-1);
 `
 
-const TabHeader = styled(Box)`
-  border-bottom: 1px solid var(--gray-7);
-  color: var(--accent-9);
-  -webkit-app-region: drag;
-  padding-left: var(--space-6);
+const TabHeader = styled(Flex).attrs({
+  align: 'center',
+  justify: 'between',
+})`
+  background: var(--gray-1);
+
+  .rt-TabsList {
+    box-shadow: none;
+    height: auto;
+  }
+
+  .rt-TabsTriggerInner {
+    background: none;
+  }
+
+  svg {
+    color: var(--gray-10);
+    margin-left: calc(0px - var(--space-1));
+  }
+
+  button {
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--gray-4);
+    }
+
+    &[data-state='active'] {
+      background: var(--gray-5);
+    }
+  }
 `
 
-const TabsList = styled(Tabs.List)`
-  box-shadow: none;
-  margin-bottom: -1px;
-  -webkit-app-region: no-drag;
+const Column = styled(Box)`
+  width: 50%;
 `
 
-const ContentBox = styled(Box)`
-  padding: var(--space-4) 0;
+const LeftColumn = styled(Column)`
+  ${staggerAnimation(fadein)}
 `
 
-const ContentBoxHeader = styled(Heading).attrs({
+type CustomFontProps = {
+  $font?: string
+}
+
+function renderCustomFont(props: CustomFontProps) {
+  return {
+    style: {
+      fontFamily: props.$font,
+    },
+  }
+}
+
+const RightColumn = styled(Column).attrs<CustomFontProps>(renderCustomFont)`
+  ${staggerAnimation(fadein)}
+`
+
+const ContentHeader = styled(Heading).attrs({
   size: '5',
 })`
   margin-bottom: var(--space-3);
@@ -104,34 +147,25 @@ const Content = styled(Tabs.Content)`
   flex-direction: row;
   gap: var(--space-4);
 
-  ${ContentBox} {
-    width: 50%;
-    overflow-x: hidden;
+  &[data-state='active'] {
+    padding: var(--space-4);
   }
 `
 
-const StyledTables = styled(Tables)`
-  max-width: 45vw;
-  overflow: hidden;
-
-  ${fadeinStyles()}
-`
-
-const Header = styled(Flex)`
-  -webkit-app-region: drag;
-  padding: var(--space-3);
-
-  ${BackLink} {
-    -webkit-app-region: no-drag;
-  }
+const GlyphsContainer = styled(ScrollArea).attrs({
+  type: 'hover',
+  scrollbars: 'vertical',
+})`
+  // Header:                  56px
+  // Font Select:             57px
+  // "Glyphs" Heading:        26px
+  // Glyphs Section Padding:  var(--space-4) * 2
+  // Footer:                  24px
+  height: calc(100vh - (56px + 57px + 26px + (var(--space-4) * 2) + 24px));
 `
 
 const TabContent = styled(Box)`
-  padding: 0 var(--space-3);
-`
-
-const StyledGlyphs = styled(Glyphs)`
-  ${fadeinStyles()}
+  flex: 1;
 `
 
 type Preview = {
@@ -139,94 +173,110 @@ type Preview = {
   text: string
 }
 
-export default function Family() {
-  const { name, libraryId } = useParams()
-  const { data: family } = useAPI('get.family', [Number(libraryId), name], {
-    revalidateOnReconnect: false,
-  })
+export default function Family({ id }: FamilyProps) {
+  const { data: family } = useAPI('get.family', [id])
+  const [searchParams] = useSearchParams()
+  const from = searchParams.get('from')
 
-  const [activeFont, setActiveFont] = useState<FamilyFont | undefined>(
-    family?.fonts.at(0)
+  const [activeFont, setActiveFont] = useState<Font | undefined>()
+  const [activeTab, setActiveTab] = useState<'preview' | 'glyphs'>('preview')
+  const [preview, setPreview] = useLocalStorage(
+    'preview.markdown.all',
+    '# Hello world'
   )
 
-  const [preview] = useState<Preview>({
-    size: 32,
-    text: 'The quick brown fox jumps over the lazy dog',
-  })
+  // con
 
-  const handleFontChange = (fontName: string) => {
-    const font = family?.fonts.find((f) => f.fullName === fontName)
-
-    if (font) setActiveFont(font)
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as 'preview' | 'glyphs')
   }
 
-  const fontData = useFontData(activeFont?.id, activeFont?.fullName)
-
-  console.log(fontData)
-
   useEffect(() => {
-    if (activeFont != null || family == null) return
-
-    setActiveFont(family.fonts.at(0))
+    if (family != null && activeFont == null) {
+      setActiveFont(family.fonts.at(0))
+    }
   }, [activeFont, family])
 
   return (
-    <Container>
-      {/* <Header>
-        <BackLink to={`/library/${libraryId}`}>
-          <IndexIcon /> Back
-        </BackLink>
-      </Header> */}
-      <Tabs.Root value={activeFont?.fullName} onValueChange={handleFontChange}>
+    <Box>
+      <Header>
+        {from && (
+          <BackLink to={from}>
+            <IndexIcon /> Back
+          </BackLink>
+        )}
+        <PageHeading>{family?.name}</PageHeading>
+        <div />
+      </Header>
+      <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
         <TabHeader>
-          <Flex>
-            <BackLink to={`/library/${libraryId}`}>
-              <IndexIcon />
-            </BackLink>
-            <PageHeading>{family?.name}</PageHeading>
-          </Flex>
-          <TabsList>
-            {(family?.fonts.length ?? 0) > 4 ? (
-              <Select.Root
-                value={activeFont?.fullName}
-                onValueChange={handleFontChange}>
-                <Select.Trigger />
-                <Select.Content>
-                  {family?.fonts.map((font) => (
-                    <Select.Item key={font.id} value={font.fullName}>
-                      {font.fullName}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            ) : (
-              family?.fonts.map((font) => (
-                <Tabs.Trigger key={font.id} value={font.fullName}>
-                  {font.fullName}
-                </Tabs.Trigger>
-              ))
-            )}
-          </TabsList>
+          {/* <Tabs.List>
+            {family?.fonts.map((font) => (
+              <Tabs.Trigger key={font.id} value={font.id.toString()}>
+                {font.style}
+                {font.weight ? `:${font.weight}` : ''}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List> */}
+          <Tabs.List>
+            <Tabs.Trigger value="preview">
+              <PreviewIcon />
+              &nbsp;&nbsp;Preview
+            </Tabs.Trigger>
+            <Tabs.Trigger value="glyphs">
+              <GlyphIcon />
+              &nbsp;&nbsp;Glyphs
+            </Tabs.Trigger>
+          </Tabs.List>
+          {/* <Text size="2">Style:</Text>
+          {family?.fonts && family?.fonts.length > 1 ? (
+            <Select.Root
+              value={activeFont?.id.toString()}
+              onValueChange={handleFontChange}>
+              <Select.Trigger />
+              <SelectContent>
+                {family?.fonts.map((font) => (
+                  <Select.Item key={font.id} value={font.id.toString()}>
+                    {font.style}
+                    {font.weight ? `:${font.weight}` : ''}
+
+                  </Select.Item>
+                ))}
+              </SelectContent>
+            </Select.Root>
+          ) : (
+            family?.fonts.at(0)?.style
+          )} */}
         </TabHeader>
         <TabContent>
-          {family?.fonts.map((font) => (
-            <Content key={font.id} value={font.fullName}>
-              <ContentBox>
-                <ContentBoxHeader>Preview</ContentBoxHeader>
-                <PreviewOptions />
-                <StyledPreview id={font.id} name={font.fullName} size={36}>
-                  {preview.text}
-                </StyledPreview>
-                <StyledTables data={fontData?.tables} />
-              </ContentBox>
-              <ContentBox>
-                <ContentBoxHeader>Glyphs</ContentBoxHeader>
-                <StyledGlyphs data={fontData} />
-              </ContentBox>
+          <Content value="preview">
+            <LeftColumn>
+              <ContentHeader>Preview</ContentHeader>
+              <PreviewEditor value={preview} onValueChange={setPreview} />
+            </LeftColumn>
+            <RightColumn $font={activeFont?.fullName}>
+              <Markdown>{preview}</Markdown>
+              {/* <StyledPreview
+                font={family?.fonts.at(0)}
+                size={state['preview.size']}>
+                {state['preview.text']}
+              </StyledPreview> */}
+            </RightColumn>
+          </Content>
+          <Content value="glyphs">
+            <LeftColumn>
+              <ContentHeader>Glyphs</ContentHeader>
+              <GlyphsContainer>
+                <Glyphs data={family?.fonts.at(0)} />
+              </GlyphsContainer>
+            </LeftColumn>
+          </Content>
+          {/* {family?.fonts.map((font) => (
+            <Content key={font.id} value={font.id.toString()}>
             </Content>
-          ))}
+          ))} */}
         </TabContent>
       </Tabs.Root>
-    </Container>
+    </Box>
   )
 }

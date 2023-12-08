@@ -10,7 +10,7 @@ const fetcher = async <K extends APIKey, P = Parameters<API[K]>>([
   //@ts-ignore: this works
   const results = await api.call(key, params ?? [])
 
-  console.log(key, results)
+  console.log('response', key, results)
 
   return results
 }
@@ -20,14 +20,16 @@ const defaultConfig: SWRConfiguration = {
   revalidateOnFocus: false,
 }
 
-export default function useAPI<
-  K extends APIKey,
-  P = Parameters<API[K]>,
-  R = Awaited<ReturnType<API[K]>>
->(key: K, params?: P, config?: SWRConfiguration) {
-  const { data, error, mutate } = useSWR<R, Error>(
+export default function useAPI<K extends APIKey>(
+  key: K,
+  params?: Parameters<API[K]>,
+  config?: SWRConfiguration
+) {
+  const { data, error, mutate } = useSWR<Awaited<ReturnType<API[K]>>, Error>(
     [key, params],
-    fetcher as ([key, params]: [K, P]) => R,
+    fetcher as ([key, params]: [K, Parameters<API[K]>]) => Awaited<
+      ReturnType<API[K]>
+    >,
     { ...defaultConfig, ...config }
   )
 

@@ -1,9 +1,9 @@
 import sql from 'sql-template-tag'
 import { Library, LibraryType } from '@shared/types'
+import { toUnixTime } from '@shared/utils/datetime'
 import { FontRepository } from '~/db'
 import TokenPath from '~/lib/TokenPath'
 import Repository from './Repository'
-import * as timestamp from './timestamp'
 
 function mapLibrary(data: Library): Library {
   const library: Library = {
@@ -32,7 +32,7 @@ class LibraryRepository extends Repository<TableMap, MessageEvents> {
   async create(data: Omit<Library, 'createdAt' | 'id'>) {
     const library = await this.insert('libraries', {
       ...data,
-      createdAt: timestamp.toStorage(Date.now()),
+      createdAt: toUnixTime(),
     })
 
     this.emit('library.created', mapLibrary(library))

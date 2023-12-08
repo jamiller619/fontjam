@@ -5,7 +5,7 @@ import {
 import { Flex, IconButton } from '@radix-ui/themes'
 import { HTMLAttributes } from 'react'
 import styled from 'styled-components'
-import useAppState from '~/hooks/useAppState'
+import { useAppStateTest } from '~/hooks/useAppState'
 import useClassNames from '~/hooks/useClassNames'
 import { control } from '~/style/styles'
 import Search from './Search'
@@ -27,7 +27,8 @@ const Container = styled(Flex)`
   justify-content: space-between;
   z-index: 1;
   -webkit-app-region: drag;
-  background: var(--gray-surface);
+  background: var(--gray-2);
+  padding-top: var(--space-4);
 `
 
 const HeaderIconButton = styled(IconButton).attrs({
@@ -56,14 +57,13 @@ const HeaderIconButtonContainer = styled(Flex)`
 `
 
 export default function Header(props: HeaderProps) {
-  const [state, setAppState] = useAppState()
+  const [state, setState] = useAppStateTest('library.filters.view')
 
   const handleViewChange = (view: 'grid' | 'list') => {
     return function handler() {
-      setAppState((prev) => ({
-        ...prev,
+      setState({
         'library.filters.view': view,
-      }))
+      })
     }
   }
 

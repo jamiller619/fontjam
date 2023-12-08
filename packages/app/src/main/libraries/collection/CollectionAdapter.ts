@@ -1,14 +1,11 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import { FontFamily, Library, Page, Paged } from '@shared/types'
-import { paths } from '~/config'
+import { FontFamily, Library, Page, Paged, Sort } from '@shared/types'
 import { FontRepository, LibraryRepository } from '~/db'
 import CommonAdapter from '~/libraries/CommonAdapter'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
 import { collection as defaultCollections } from '~/libraries/defaultLibraries.json'
 import * as views from './views'
 
-type CollectionType = 'view' | 'folder'
+type CollectionType = 'view' | 'table'
 
 function resolveViewName(libraryPath: string) {
   return libraryPath.split('view://').filter(Boolean).at(0)
@@ -19,7 +16,7 @@ function resolveCollectionType(collectionPath: string): CollectionType {
     return 'view'
   }
 
-  return 'folder'
+  return 'table'
 }
 
 async function initView(viewPath: string) {
@@ -43,14 +40,15 @@ async function resolvePath(collectionPath: string) {
     return collectionPath
   }
 
-  const resolved = path.normalize(
-    collectionPath.replace('%collections%', `${paths.data}/collections`)
-  )
-
-  await fs.mkdir(resolved, { recursive: true })
-
-  return resolved
+  return collectionPath
 }
+
+const defaultFamilies = {
+  index: 0,
+  length: 0,
+  records: [],
+  total: 0,
+} as Paged<FontFamily>
 
 export default class CollectionAdapter
   extends CommonAdapter
@@ -64,24 +62,24 @@ export default class CollectionAdapter
     await super.init('collection')
   }
 
-  override async getFamilies(library: Library, page: Page) {
+  override async getFamilies(
+    library: Library,
+    page: Page,
+    sort: Sort<FontFamily>
+  ) {
     const type = resolveCollectionType(library.path)
 
     if (type === 'view') {
       const view = resolveViewName(library.path)
 
       if (view) {
-        return FontRepository.executeView(view, page)
+        return FontRepository.executeView(view, page, sort)
       }
+    } else {
+      return super.getFamilies(library, page, sort)
     }
 
-    return {} as Paged<FontFamily>
-  }
-
-  async initLibrary(library: Library) {
-    this.emit('library.loaded', library)
-
-    return Promise.resolve()
+    return defaultFamilies
   }
 
   async initDefaults() {

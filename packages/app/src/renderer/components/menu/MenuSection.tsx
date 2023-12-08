@@ -1,6 +1,6 @@
 import { AddCircle16Regular as AddIcon } from '@fluentui/react-icons'
 import { Flex, Heading, IconButton } from '@radix-ui/themes'
-import { MouseEvent, ReactNode, useRef } from 'react'
+import { MouseEvent, ReactNode } from 'react'
 import { styled } from 'styled-components'
 import useAnimatedNavigate from '~/hooks/useAnimatedNavigate'
 import useAppState from '~/hooks/useAppState'
@@ -55,8 +55,7 @@ const AddButton = styled(IconButton).attrs({
   cursor: pointer;
 `
 
-export default function NavSection({ children, label }: NavSectionProps) {
-  const ref = useRef(null)
+export default function MenuSection({ children, label }: NavSectionProps) {
   const [state] = useAppState()
   const navigate = useAnimatedNavigate()
 
@@ -80,7 +79,7 @@ export default function NavSection({ children, label }: NavSectionProps) {
           </AddButton>
         )}
       </Header>
-      <Navlist ref={ref}>{children}</Navlist>
+      <Navlist>{children}</Navlist>
     </Container>
   )
 }

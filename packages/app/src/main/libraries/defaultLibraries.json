@@ -24,7 +24,7 @@
       "name": "Favorites",
       "icon": "fluentui/Heart20Filled",
       "isEditable": 0,
-      "path": "%collections%/favorites"
+      "path": "table://collections"
     },
     {
       "name": "Recently Added",

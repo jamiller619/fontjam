@@ -1,10 +1,16 @@
+import fs from 'node:fs/promises'
 import { Transform } from 'node:stream'
-import sql, { Sql, bulk, empty, raw } from 'sql-template-tag'
-import { BaseFont, Font, FontFamily, Page } from '@shared/types'
+import logger from 'logger'
+import sql, { Sql, bulk, raw } from 'sql-template-tag'
+import { BaseFont, Font, FontFamily, Page, Sort } from '@shared/types'
+import { toUnixTime } from '@shared/utils/datetime'
 import groupBy from '@shared/utils/groupBy'
+import { titleCase } from '@shared/utils/string'
+import data from '~/data/systemDirectories.json'
 import Repository from './Repository'
 import filters, { createPagedResponse } from './filters'
-import * as timestamp from './timestamp'
+
+const log = logger('font.repository')
 
 type TableMap = {
   fonts: Font
@@ -19,7 +25,7 @@ type FontFamilyJoin = TableMap['families'] &
     fontCreatedAt: number
   }
 
-const fontFamilyJoinQuery = (subQuery?: Sql, table = 'families') => sql`
+const fontFamilyJoinQuery = (subQuery: Sql, table = 'families') => sql`
   SELECT
     families.id,
     families.createdAt,
@@ -40,14 +46,46 @@ const fontFamilyJoinQuery = (subQuery?: Sql, table = 'families') => sql`
   FROM (
     SELECT *
     FROM ${raw(table)}
-    ${subQuery ?? empty}
+    ${subQuery}
   ) as families
   join fonts
   on families.id = fonts.familyId
 `
 
-function mapFontFamilyJoins(data: FontFamilyJoin[]) {
-  const families = groupBy(data, (d) => String(d.id))
+const styleRanks = ['regular', 'medium', 'demi', 'mono', 'book', 'icons']
+
+function scoreWeight(weight: number | null) {
+  if (weight == null) {
+    return 0
+  }
+
+  return 1000 - Math.abs(400 - weight) / 1000
+}
+
+function scoreStyle(style: string) {
+  const lower = style.toLowerCase()
+  const idx = styleRanks.toReversed().findIndex((s) => lower.includes(s))
+  const rank = (idx + 1) / styleRanks.length
+
+  return rank
+}
+
+function generateSortRank(font: Font) {
+  const weight = scoreWeight(font.weight)
+  const style = scoreStyle(font.style)
+
+  return weight / 2 + style / 2
+}
+
+function sortFonts(a: Font, b: Font) {
+  const sa = generateSortRank(a)
+  const sb = generateSortRank(b)
+
+  return sb - sa
+}
+
+function mapFontFamilyJoins(...fontFamilies: FontFamilyJoin[]) {
+  const families = groupBy(fontFamilies, (d) => String(d.id))
 
   return Object.values(families).map((rows) => {
     const ref = rows.at(0)!
@@ -63,16 +101,18 @@ function mapFontFamilyJoins(data: FontFamilyJoin[]) {
       designer: ref.designer,
       license: ref.license,
       version: ref.version,
-      fonts: rows.map((row) => ({
-        createdAt: row.fontCreatedAt,
-        familyId: ref.id,
-        fullName: row.fullName,
-        id: row.fontId,
-        path: row.path,
-        postscriptName: row.postscriptName,
-        style: row.style,
-        weight: row.weight,
-      })),
+      fonts: rows
+        .map((row) => ({
+          createdAt: row.fontCreatedAt,
+          familyId: ref.id,
+          fullName: row.fullName,
+          id: row.fontId,
+          path: row.path,
+          postscriptName: row.postscriptName,
+          style: titleCase(row.style),
+          weight: row.weight,
+        }))
+        .sort(sortFonts),
     }
 
     return family
@@ -85,22 +125,36 @@ export type BaseFamilyWithFontPaths = Omit<TableMap['families'], 'fonts'> & {
   })[]
 }
 
+function resolveInstallDir() {
+  const { platform } = process
+
+  if (Object.hasOwn(data[platform as keyof typeof data], 'user')) {
+    // @ts-ignore: this is correct
+    return data[platform as keyof typeof data].user
+  }
+
+  return data[platform as keyof typeof data].system
+}
+
 class FontRepository extends Repository<TableMap> {
-  async #findOrInsertFamily(
+  async #findOrCreateFamily(
     libraryId: number,
     data: Omit<TableMap['families'], 'id' | 'createdAt' | 'libraryId'>
   ) {
     const familyRecord = await this.findFamilyByName(libraryId, data.name)
 
     if (familyRecord == null) {
-      return this.insert('families', {
-        ...data,
-        createdAt: timestamp.toStorage(Date.now()),
-        libraryId,
-      })
+      return [
+        true,
+        await this.insert('families', {
+          ...data,
+          createdAt: toUnixTime(),
+          libraryId,
+        }),
+      ] as const
     }
 
-    return familyRecord
+    return [false, familyRecord] as const
   }
 
   async #getFamilyFonts(familyId: number) {
@@ -117,27 +171,38 @@ class FontRepository extends Repository<TableMap> {
     data: Omit<BaseFamilyWithFontPaths, 'id' | 'createdAt' | 'libraryId'>
   ) {
     const { fonts, ...family } = data
-    const record = await this.#findOrInsertFamily(libraryId, family)
+    const [wasFamilyCreated, record] = await this.#findOrCreateFamily(
+      libraryId,
+      family
+    )
 
-    if (record.libraryId === libraryId) {
-      await this.update('families', record.id, family)
+    if (record.libraryId !== libraryId) return wasFamilyCreated
 
-      const familyFonts = await this.#getFamilyFonts(record.id)
+    let wasUpdated = await this.update('families', record.id, family)
 
-      for await (const font of fonts) {
-        const found = familyFonts?.find((f) => f.fullName === font.fullName)
+    const familyFonts = await this.#getFamilyFonts(record.id)
 
-        if (found != null) {
-          await this.update('fonts', found.id, font)
-        } else {
-          await this.insert('fonts', {
-            ...font,
-            createdAt: timestamp.toStorage(Date.now()),
-            familyId: record.id,
-          })
+    for await (const font of fonts) {
+      const found = familyFonts?.find((f) => f.fullName === font.fullName)
+
+      if (found != null) {
+        const fontUpdated = await this.update('fonts', found.id, font)
+
+        if (fontUpdated) {
+          wasUpdated = true
         }
+      } else {
+        wasUpdated = true
+
+        await this.insert('fonts', {
+          ...font,
+          createdAt: toUnixTime(),
+          familyId: record.id,
+        })
       }
     }
+
+    return wasUpdated
   }
 
   async insertFamily(
@@ -149,7 +214,7 @@ class FontRepository extends Repository<TableMap> {
     const { id } = await this.insert('families', {
       ...family,
       libraryId,
-      createdAt: timestamp.toStorage(Date.now()),
+      createdAt: toUnixTime(),
     })
 
     const keys = ['familyId', ...Object.keys(data.fonts.at(0)!)]
@@ -163,15 +228,34 @@ class FontRepository extends Repository<TableMap> {
     return id
   }
 
-  async getFamilies(libraryId: number, page: Page) {
+  async getFamily(id: number) {
+    const query = fontFamilyJoinQuery(sql`
+      WHERE id = ${id}
+    `)
+
+    const data = await this.queryMany<FontFamilyJoin>(query)
+
+    if (data) {
+      return mapFontFamilyJoins(...data).at(0)
+    }
+  }
+
+  async getFamilies(libraryId: number, page: Page, sort: Sort<FontFamily>) {
+    const newSort = {
+      col: `families.${sort.col}`,
+      dir: sort.dir,
+    }
+
     const query = fontFamilyJoinQuery(sql`
       WHERE libraryId = ${libraryId}
+      ${filters.sort(newSort)}
       ${filters.page(page)}
     `)
 
     const data = await this.queryMany<FontFamilyJoin>(query)
+
     const total = await this.countFamilies(libraryId)
-    const records = mapFontFamilyJoins(data)
+    const records = mapFontFamilyJoins(...data)
 
     return createPagedResponse(total, page.index, records)
   }
@@ -190,12 +274,12 @@ class FontRepository extends Repository<TableMap> {
       WHERE libraryId = ${libraryId}
     `
 
-    const stream = this.stream<FontFamilyJoin>(query)
+    const stream = this.stream<FontFamily>(query)
 
     return stream.pipe(
       new Transform({
         objectMode: true,
-        transform: (data, _, cb) => cb(null, console.log('data', data)),
+        transform: (data, _, cb) => cb(null, data),
       })
     )
   }
@@ -226,8 +310,9 @@ class FontRepository extends Repository<TableMap> {
     return result?.total ?? 0
   }
 
-  async executeView(viewName: string, page: Page) {
+  async executeView(viewName: string, page: Page, sort: Sort<FontFamily>) {
     const pageQuery = sql`
+      ${filters.sort(sort)}
       ${filters.page(page)}
     `
     const query = sql`
@@ -241,13 +326,21 @@ class FontRepository extends Repository<TableMap> {
     const count = await this.query<{ total: number }>(countQuery)
 
     if (!count) {
-      throw new Error(`Unable to determine count total for view "${viewName}"`)
+      log.warn(`Unable to determine count total for view "${viewName}"`)
     }
 
     const records = await this.queryMany<FontFamilyJoin>(query)
-    const mapped = mapFontFamilyJoins(records)
+    const mapped = mapFontFamilyJoins(...records)
 
-    return createPagedResponse(count.total, page.index, mapped)
+    return createPagedResponse(count?.total ?? 0, page.index, mapped)
+  }
+
+  async installFonts(...filePaths: string[]) {
+    const dir = resolveInstallDir()
+
+    for await (const filePath of filePaths) {
+      await fs.copyFile(filePath, dir)
+    }
   }
 }
 

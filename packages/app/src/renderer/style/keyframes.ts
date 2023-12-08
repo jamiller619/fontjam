@@ -10,10 +10,10 @@ export const fadein = keyframes`
 `
 
 export const fadeout = keyframes`
-from {
-  opacity: 1;
-}
-to {
-  opacity: 0;
-}
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 `

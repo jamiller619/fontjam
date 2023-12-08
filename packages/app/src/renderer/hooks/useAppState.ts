@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 
 type AppState = {
@@ -16,6 +17,38 @@ const defaultAppState: AppState = {
   'library.active.id': null,
   'library.filters.view': 'grid',
   'toolbar.collapsed': false,
+}
+
+export function useAppStateTest<T extends (keyof AppState)[]>(...keys: T) {
+  const [store, setStore] = useLocalStorage<AppState>(
+    'appstate',
+    defaultAppState
+  )
+
+  const state = useMemo(() => {
+    const appState = {} as {
+      [K in T[number]]: AppState[K]
+    }
+
+    for (const key of keys) {
+      // @ts-ignore: Fuck you, this works
+      appState[key] = store[key]
+    }
+
+    return appState
+  }, [keys, store])
+
+  const setState = useCallback(
+    (newState: Partial<typeof state>) => {
+      setStore((prev) => ({
+        ...prev,
+        ...newState,
+      }))
+    },
+    [setStore]
+  )
+
+  return [state, setState] as const
 }
 
 export default function useAppState() {

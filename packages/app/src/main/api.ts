@@ -1,6 +1,8 @@
 import { handle } from '@shared/ipc'
 import { NotReadyErr } from '@shared/utils/error'
+import initProviders from '~/providers/init'
 import type MainWindow from './MainWindow'
+import autobind from './autobind'
 
 const NotReady = () => NotReadyErr
 
@@ -20,12 +22,50 @@ export default {
   },
 
   async start() {
-    const { LibraryRepository } = await import('~/db')
+    const { default: connect } = await import('~/db/connect')
+    const { default: ReadRepository } = await import('~/db/ReadRepository')
 
-    handle('get.libraries', LibraryRepository.getAll.bind(LibraryRepository))
-    handle('create.library', LibraryRepository.create.bind(LibraryRepository))
-    handle('get.stats', LibraryRepository.getStats.bind(LibraryRepository))
+    const conn = connect()
+    // const { initAdapters, getFamilies } = await import(
+    //   '~/libraries/LibraryAdapter'
+    // )
 
-    await (await import('~/libraries/LibraryAdapter')).init()
+    // handle('create.library', LibraryRepository.create.bind(LibraryRepository))
+    handle(
+      'get.libraries',
+      autobind(conn, ReadRepository.getLibraries.bind(ReadRepository)),
+    )
+
+    handle(
+      'get.families',
+      autobind(conn, ReadRepository.getFamilies.bind(ReadRepository)),
+    )
+
+    handle(
+      'get.family',
+      autobind(conn, ReadRepository.getFamily.bind(ReadRepository)),
+    )
+
+    handle(
+      'get.stats',
+      autobind(conn, ReadRepository.getLibraryStats.bind(ReadRepository)),
+    )
+
+    const libraries = await ReadRepository.getLibraries(conn)
+
+    await initProviders(libraries)
+
+    // const addFonts = CollectionRepository.addFonts.bind(CollectionRepository)
+    // const removeFonts =
+    //   CollectionRepository.removeFonts.bind(CollectionRepository)
+
+    // handle('add.fonts', addFonts)
+    // handle('remove.fonts', removeFonts)
+
+    // const installFonts = FontRepository.installFonts.bind(FontRepository)
+
+    // handle('install.fonts', installFonts)
+
+    // await initAdapters(win)
   },
 }

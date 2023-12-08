@@ -1,5 +1,5 @@
 import { Flex } from '@radix-ui/themes'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment } from 'react'
 import { Outlet } from 'react-router-dom'
 import styled from 'styled-components'
 import { Menu } from '~/components/menu'
@@ -28,18 +28,6 @@ const Loader = styled(Flex)`
 `
 
 export default function Layout() {
-  const [startTime, setStartTime] = useState<null | number>(null)
-
-  useEffect(() => {
-    window.api.on('startup.complete', (ms) => {
-      console.log('startup.complete', ms)
-
-      setStartTime(ms)
-    })
-  }, [])
-
-  console.log(startTime)
-
   return (
     <Fragment>
       <Container>
@@ -50,7 +38,7 @@ export default function Layout() {
       </Container>
       <Footer />
       <WindowControls />
-      {/* {startTime == null && <Loader />} */}
+      <div id="portalContainer" />
     </Fragment>
   )
 }

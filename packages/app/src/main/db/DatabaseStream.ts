@@ -12,7 +12,7 @@ export default class DatabaseStream<T> extends Readable {
     this.on('end', () => this.stmt.finalize())
   }
 
-  _read() {
+  override _read() {
     this.stmt.get<T>((err, result) => {
       if (err) {
         this.emit('error', err)

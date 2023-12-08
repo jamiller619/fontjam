@@ -31,7 +31,7 @@ body {
   --default-font-family: 'Inter var', sans-serif;
   --heading-font-family: var(--default-font-family);
   --scale-1: var(--space-6);
-  --default-border-color: var(--gray-4);
+  --default-border-color: var(--gray-a4);
   --default-border: 1px solid var(--default-border-color);
 }
 

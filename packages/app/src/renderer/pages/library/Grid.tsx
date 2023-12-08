@@ -1,12 +1,14 @@
+import { DragOverlay, useDndMonitor } from '@dnd-kit/core'
+import * as Portal from '@radix-ui/react-portal'
 import { Box, ScrollArea } from '@radix-ui/themes'
-import { ReactNode, forwardRef } from 'react'
+import { ReactNode, Ref, forwardRef, useMemo, useState } from 'react'
 import { css, styled } from 'styled-components'
 import { FontFamily } from '@shared/types'
 import { Card } from '~/components/card'
 import useAppState from '~/hooks/useAppState'
 
 type GridProps = {
-  data?: (FontFamily | undefined)[]
+  data?: FontFamily[]
   children?: ReactNode
 }
 
@@ -27,18 +29,47 @@ const ListContainer = css`
   gap: var(--space-1);
 `
 
-const Container = styled(Box)<{ $view: 'list' | 'grid' }>`
+type ContainerProps = {
+  $view: 'grid' | 'list'
+}
+
+const Container = styled(Box)<ContainerProps>`
   padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
 
   ${({ $view }) => ($view === 'list' ? ListContainer : GridContainer)}
 `
 
-export default forwardRef<HTMLDivElement, GridProps>(function Grid(
-  { data, children }: GridProps,
-  ref
-) {
+const DragOverlayCard = styled(Card)`
+  cursor: grabbing;
+  background-color: var(--gray-4);
+
+  .preview,
+  .footer {
+    display: none;
+  }
+`
+
+function Grid({ data, children }: GridProps, ref: Ref<HTMLDivElement>) {
   const [state] = useAppState()
   const view = state['library.filters.view']
+  const [dragData, setDragData] = useState<FontFamily | null>(null)
+  const cardStyle = useMemo(() => {
+    return {
+      minHeight: heights[view],
+    }
+  }, [view])
+
+  useDndMonitor({
+    onDragStart(event) {
+      setDragData(event.active.data.current as FontFamily)
+    },
+    onDragEnd() {
+      setDragData(null)
+    },
+    onDragCancel() {
+      setDragData(null)
+    },
+  })
 
   return (
     <ScrollArea type="hover" scrollbars="vertical" ref={ref}>
@@ -47,12 +78,19 @@ export default forwardRef<HTMLDivElement, GridProps>(function Grid(
           <Card
             key={`${family?.name}-${i}`}
             data={family}
-            height={heights[view]}
             view={view}
+            style={cardStyle}
           />
         ))}
         {children}
+        <Portal.Root container={document.getElementById('portalContainer')}>
+          <DragOverlay>
+            {dragData && <DragOverlayCard data={dragData} view={view} />}
+          </DragOverlay>
+        </Portal.Root>
       </Container>
     </ScrollArea>
   )
-})
+}
+
+export default forwardRef<HTMLDivElement, GridProps>(Grid)

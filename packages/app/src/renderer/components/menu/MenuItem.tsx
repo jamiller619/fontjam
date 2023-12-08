@@ -1,12 +1,13 @@
 import { Text } from '@radix-ui/themes'
-import { HTMLAttributes, useRef } from 'react'
+import { HTMLAttributes, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 import AnimatedLink from '~/components/AnimatedLink'
+import { Droppable } from '~/components/dnd'
 import useClassNames from '~/hooks/useClassNames'
 import usePress from '~/hooks/usePress'
 import { control } from '~/style/styles'
-import LibraryIcon from '../icons/LibraryIcon'
+import MenuIcon from './MenuIcon'
 
 type NavItemProps = HTMLAttributes<HTMLLIElement> & {
   label: string
@@ -34,6 +35,8 @@ const Link = styled(AnimatedLink)`
   padding: 0 13px;
   position: relative;
 
+  filter: grayscale(1);
+
   span:last-child {
     color: var(--gray-11);
   }
@@ -41,6 +44,8 @@ const Link = styled(AnimatedLink)`
   ${control.style}
 
   &.active {
+    filter: none;
+
     ${control.active}
 
     span:last-child {
@@ -49,29 +54,52 @@ const Link = styled(AnimatedLink)`
   }
 
   &.pressed:not(.active) {
+    filter: none;
     ${control.pressed}
   }
 
   &:hover:not(.active):not(.pressed) {
+    filter: none;
     ${control.hover}
+  }
+
+  &.dropover {
+    filter: none;
+    ${control.active}
+    outline: 2px solid var(--accent-9);
   }
 `
 
-export default function NavItem({ label, icon, href, ...props }: NavItemProps) {
+export default function MenuItem(props: NavItemProps) {
   const location = useLocation()
-  const ref = useRef<HTMLAnchorElement>(null)
-  const isPressed = usePress(ref)
+  const isPressedLinkRef = useRef<HTMLAnchorElement>(null)
+  const isPressed = usePress(isPressedLinkRef)
+  const [isOver, setIsOver] = useState(false)
+
+  const { label, icon, href, ...rest } = props
+  const isActive = location.pathname === href
+
   const classNames = useClassNames({
-    active: location.pathname === href,
+    active: isActive,
     pressed: isPressed,
+    dropover: isOver,
   })
 
+  const handlers = {
+    onDropOver() {
+      setIsOver(true)
+    },
+    onDropOut() {
+      setIsOver(false)
+    },
+  }
+
   return (
-    <li {...props}>
-      <Link to={href} {...classNames} ref={ref}>
-        <LibraryIcon name={icon} />
+    <Droppable as="li" id={label} {...rest} {...handlers}>
+      <Link to={href} {...classNames} ref={isPressedLinkRef}>
+        <MenuIcon name={icon} />
         <Label className="navItemLinkLabel">{label}</Label>
       </Link>
-    </li>
+    </Droppable>
   )
 }

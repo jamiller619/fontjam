@@ -16,6 +16,24 @@ export type Library = {
   path: string
 }
 
+export type FontVariationAxis = {
+  tag: string
+  name: string
+  minValue: number
+  defaultValue: number
+  maxValue: number
+}
+
+export type FontVariationInstance = {
+  name: string
+  coordinates: Record<string, number>
+}
+
+export type FontVariation = {
+  axes: FontVariationAxis[]
+  instances: FontVariationInstance[]
+}
+
 export type BaseFont = {
   fullName: string
   style: string
@@ -23,40 +41,33 @@ export type BaseFont = {
   postscriptName: string | null
   // A number value between 1 and 1000, inclusive
   weight: number | null
+
+  fvar: FontVariation | null
 }
 
 export type Font = BaseFont & {
   id: number
   familyId: number
   createdAt: number
+  fileCreatedAt: number | null
   path: string
 }
 
-export type BaseFontFamily = {
-  fonts: BaseFont[]
+export type FontFamily = {
+  id: number
+  libraryId: number
+  createdAt: number
   name: string
 
   copyright: string | null
   designer: string | null
   license: string | null
   popularity: number | null
-  tags: string | null
   version: number | null
-}
 
-export type FontFamily = Omit<BaseFontFamily, 'fonts' | 'tags'> & {
-  id: number
-  libraryId: number
-  createdAt: number
   fonts: Font[]
   tags: string[] | null
 }
-
-// export type FontFamily<T extends SharedFont = Font> = SharedFontFamily<T> & {
-//   id: number
-//   libraryId: number
-//   createdAt: number
-// }
 
 export type OptionalId<T extends { id: number }> = Omit<T, 'id'> & {
   id?: number

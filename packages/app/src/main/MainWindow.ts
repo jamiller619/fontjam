@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BrowserWindow, dialog } from 'electron'
 import logger from 'logger'
-import { WindowControlAction } from '@shared/api'
-import { IS_DEV } from '~/config'
+import { APIEvent, WindowControlAction } from '@shared/api'
+import { IS_DEV } from '~/config/constants'
 
 const log = logger('main.window')
 
@@ -31,8 +31,6 @@ export default class MainWindow extends BrowserWindow {
         preload: path.join(dir, 'preload.cjs'),
       },
     })
-
-    this.show()
   }
 
   override async show() {
@@ -47,6 +45,13 @@ export default class MainWindow extends BrowserWindow {
     }
 
     super.show()
+  }
+
+  send<K extends keyof APIEvent>(
+    channel: K,
+    ...params: Parameters<APIEvent[K]>
+  ) {
+    this.webContents.send(channel, ...params)
   }
 
   async chooseDirectory() {

@@ -16,11 +16,6 @@ export default class RemoteAdapter
     await super.init('remote')
   }
 
-  async initLibrary(library: Library) {
-    this.emit('library.loaded', library)
-    return Promise.resolve()
-  }
-
   async initDefaults() {
     for await (const remote of defaultRemoteLibraries) {
       await LibraryRepository.create({

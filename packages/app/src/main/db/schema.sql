@@ -12,11 +12,13 @@ CREATE TABLE IF NOT EXISTS fonts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   familyId INTEGER NOT NULL,
   createdAt INTEGER NOT NULL,
+  fileCreatedAt INTEGER,
   fullName TEXT NOT NULL,
   path TEXT NOT NULL,
   postscriptName TEXT,
   style TEXT NOT NULL,
   weight INTEGER,
+  fvar JSON,
   FOREIGN KEY(familyId) REFERENCES families(id) ON DELETE CASCADE,
   CONSTRAINT idxFontsPath UNIQUE (path)
 );
@@ -35,3 +37,11 @@ CREATE TABLE IF NOT EXISTS families (
   FOREIGN KEY(libraryId) REFERENCES libraries(id) ON DELETE CASCADE,
   UNIQUE(libraryId, name)
 );
+
+CREATE TABLE IF NOT EXISTS collections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fontId INTEGER NOT NULL,
+  libraryId INTEGER NOT NULL,
+  FOREIGN KEY(fontId) REFERENCES fonts(id),
+  FOREIGN KEY(libraryId) REFERENCES libraries(id)
+)

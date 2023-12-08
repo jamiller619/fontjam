@@ -6,14 +6,13 @@
     "**/*.tsbuildinfo": true,
     ".git": true,
     "*.lock": true,
-    "dist": true,
-    "design": true
+    "dist": true
   },
   "editor.codeActionsOnSave": {
-    "source.fixAll": true
+    "source.fixAll": "explicit"
   },
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "cssvar.files": ["./node_modules/@radix-ui/themes/styles.css"],
+  "cssvar.files": ["./node_modules/@radix-ui/themes/styles.css", "./packages/app/src/renderer/style/theme.css"],
   // Do not ignore node_modules css files, which is ignored by default
   "cssvar.ignore": [],
 

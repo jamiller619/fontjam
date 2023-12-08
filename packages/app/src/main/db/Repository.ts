@@ -60,9 +60,10 @@ export default class Repository<
     sort: Sort<T[K]>
   ): Promise<Paged<T[K]>> {
     const records = await this.queryMany<T[K]>(
-      sql`SELECT * FROM ${raw(table as string)} ${filters.sort(
-        sort
-      )} ${filters.page(page)}`
+      sql`
+        SELECT * FROM ${raw(table as string)}
+        ${filters.sort(sort)} ${filters.page(page)}
+      `
     )
 
     return {
@@ -91,30 +92,30 @@ export default class Repository<
       }
     }
 
-    if (Object.keys(updates).length) {
-      const keys = Object.keys(updates)
+    const keys = Object.keys(updates)
+    const hasUpdates = keys.length
 
-      let query = sql`UPDATE ${raw(table as string)} SET`
-
-      for (const key of keys) {
-        query = sql`
-          ${query},
-          ${raw(key)} = ${updates[key as keyof typeof updates]}
-        `
-      }
-
-      query = sql`
-        ${query}
-        WHERE id = ${String(id)}
-      `
-
-      await this.run(query)
-
-      return {
-        ...updates,
-        id,
-      } as T[K]
+    if (!hasUpdates) {
+      return false
     }
+
+    let query = sql`UPDATE ${raw(table as string)} SET`
+
+    for (const key of keys) {
+      query = sql`
+        ${query},
+        ${raw(key)} = ${updates[key as keyof typeof updates]}
+      `
+    }
+
+    query = sql`
+      ${query}
+      WHERE id = ${String(id)}
+    `
+
+    await this.run(query)
+
+    return true
   }
 
   async insert<K extends keyof T, R extends { id: number } = T[K]>(
@@ -125,9 +126,10 @@ export default class Repository<
     const vals = Object.values(data)
 
     const id = await this.run(
-      sql`INSERT INTO ${raw(table as string)} (${raw(
-        cols.toString()
-      )}) VALUES ${bulk([vals])}`
+      sql`
+        INSERT INTO ${raw(table as string)}
+        (${raw(cols.toString())}) VALUES ${bulk([vals])}
+      `
     )
 
     return {
@@ -145,21 +147,23 @@ export default class Repository<
     }
 
     return this.query(
-      sql`SELECT * FROM ${raw(table as string)} WHERE id = ${raw(
-        id.toString()
-      )}`
+      sql`
+        SELECT * FROM ${raw(table as string)}
+        WHERE id = ${raw(id.toString())}
+      `
     )
   }
 
-  async find<K extends keyof T, R = T[K]>(
+  async find<K extends keyof T>(
     table: K,
-    col: keyof R,
-    value: R[typeof col]
+    col: keyof T[K],
+    value: T[K][typeof col]
   ) {
-    const result = await this.query<R>(
-      sql`SELECT * FROM ${raw(table as string)} WHERE ${raw(
-        String(col)
-      )} = ${value}`
+    const result = await this.query<T[K]>(
+      sql`
+        SELECT * FROM ${raw(table as string)}
+        WHERE ${raw(String(col))} = ${value}
+      `
     )
 
     return result
@@ -171,9 +175,10 @@ export default class Repository<
     value: R[typeof col]
   ) {
     return this.queryMany<R>(
-      sql`SELECT * FROM ${raw(table as string)} WHERE ${raw(
-        String(col)
-      )} = ${value}`
+      sql`
+        SELECT * FROM ${raw(table as string)}
+        WHERE ${raw(String(col))} = ${value}
+      `
     )
   }
 }
