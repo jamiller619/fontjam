@@ -3,7 +3,7 @@ import {
   FontVariation,
   FontVariationAxis,
   FontVariationInstance,
-} from '@shared/types'
+} from '@shared/types/dto'
 import { slugify } from '@shared/utils/string'
 
 function toArrayBuffer(buffer: Buffer) {
@@ -78,13 +78,40 @@ export type ParsedFont = {
   familyName: string
   path: string
   tags: string[] | null
-  postscriptName: string | null
+  postscriptFamilyName: string | null
+  postscriptFontName: string | null
   style: string
   copyright: string | null
   designer: string | null
   license: string | null
   fvar: FontVariation | null
-  fileCreatedAt: number | null
+}
+
+function getPostscriptNames(font: opentype.Font) {
+  const names: Pick<ParsedFont, 'postscriptFamilyName' | 'postscriptFontName'> =
+    {
+      postscriptFamilyName: null,
+      postscriptFontName: null,
+    }
+
+  const name = getName(font.names.postScriptName)
+
+  if (!name?.trim()) {
+    return names
+  }
+
+  const parts = name.split('-')
+
+  if (parts.length === 1) {
+    names.postscriptFamilyName = name
+
+    return names
+  }
+
+  names.postscriptFontName = parts.pop()!
+  names.postscriptFamilyName = parts.join('-')
+
+  return names
 }
 
 export function parse(
@@ -94,7 +121,7 @@ export function parse(
   const parsed = opentype.parse(toArrayBuffer(buffer))
   const familyName = getName(parsed.names.fontFamily)
 
-  if (!familyName) {
+  if (!familyName?.trim()) {
     console.warn(`Cannot parse font without a family name`, parsed)
 
     return undefined
@@ -103,24 +130,26 @@ export function parse(
   const fontName = getName(parsed.names.fullName)
   const fontStyle = getName(parsed.names.fontSubfamily)
 
-  if (!fontName || !fontStyle) {
+  if (!fontName?.trim() || !fontStyle?.trim()) {
     console.warn(`Cannot parse font without a font name`, parsed)
 
     return undefined
   }
 
-  const font = {
+  const psNames = getPostscriptNames(parsed)
+
+  const font: ParsedFont = {
     fontName,
     familyName,
     path: fontPath,
     tags: parseTags(parsed.names),
-    postscriptName: getName(parsed.names.postScriptName),
+    postscriptFamilyName: psNames.postscriptFamilyName,
+    postscriptFontName: psNames.postscriptFontName,
     style: fontStyle.toLowerCase(),
     copyright: getName(parsed.names.copyright),
     designer: getName(parsed.names.designer),
     license: getName(parsed.names.licenseURL) ?? getName(parsed.names.license),
     fvar: parseFVar(parsed.tables['fvar']),
-    fileCreatedAt: parsed.createdTimestamp,
   }
 
   return font

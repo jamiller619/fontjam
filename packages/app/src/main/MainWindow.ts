@@ -19,13 +19,7 @@ export default class MainWindow extends BrowserWindow {
       frame: false,
       show: false,
       titleBarStyle: 'hidden',
-
-      // The following settings enable the "mica" appearance
-      // on Windows, which is quite nice, but is currently
-      // riddled with bugs on the electron side.
-      // https://github.com/electron/electron/issues/39959
-      // transparent: true,
-      // backgroundMaterial: 'mica',
+      backgroundMaterial: 'mica',
 
       webPreferences: {
         preload: path.join(dir, 'preload.cjs'),

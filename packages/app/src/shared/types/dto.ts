@@ -34,30 +34,32 @@ export type FontVariation = {
   instances: FontVariationInstance[]
 }
 
-export type BaseFont = {
+export type Font = {
+  createdAt: number
+  familyId: number
+  fileCreatedAt: number | null
+  fileSize: number | null
   fullName: string
+  fvar: FontVariation | null
+  id: number
+  path: string
+  postscriptFontName: string | null
   style: string
-
-  postscriptName: string | null
   // A number value between 1 and 1000, inclusive
   weight: number | null
-
-  fvar: FontVariation | null
 }
 
-export type Font = BaseFont & {
-  id: number
-  familyId: number
-  createdAt: number
-  fileCreatedAt: number | null
-  path: string
-}
+export type BaseFont = Pick<
+  Font,
+  'fullName' | 'style' | 'postscriptFontName' | 'weight' | 'fvar'
+>
 
 export type FontFamily = {
   id: number
   libraryId: number
   createdAt: number
   name: string
+  postscriptFamilyName: string | null
 
   copyright: string | null
   designer: string | null
@@ -67,23 +69,4 @@ export type FontFamily = {
 
   fonts: Font[]
   tags: string[] | null
-}
-
-export type OptionalId<T extends { id: number }> = Omit<T, 'id'> & {
-  id?: number
-}
-
-export type Page = {
-  index: number
-  length: number
-}
-
-export type Paged<T> = Page & {
-  total: number
-  records: T[]
-}
-
-export type Sort<T> = {
-  dir: 'asc' | 'desc'
-  col: keyof T
 }

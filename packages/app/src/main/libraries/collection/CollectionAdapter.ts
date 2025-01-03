@@ -1,4 +1,5 @@
-import { FontFamily, Library, Page, Paged, Sort } from '@shared/types'
+import { FontFamily, Library } from '@shared/types/dto'
+import { Page, Paged, Sort } from '@shared/types/utils'
 import { FontRepository, LibraryRepository } from '~/db'
 import CommonAdapter from '~/libraries/CommonAdapter'
 import LibraryAdapter from '~/libraries/LibraryAdapter'
@@ -65,7 +66,7 @@ export default class CollectionAdapter
   override async getFamilies(
     library: Library,
     page: Page,
-    sort: Sort<FontFamily>
+    sort: Sort<FontFamily>,
   ) {
     const type = resolveCollectionType(library.path)
 

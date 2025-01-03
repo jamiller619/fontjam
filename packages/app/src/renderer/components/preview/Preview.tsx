@@ -1,11 +1,12 @@
 import { Box } from '@radix-ui/themes'
 import { ForwardedRef, HTMLAttributes, forwardRef } from 'react'
 import { styled } from 'styled-components'
-import { Font } from '@shared/types'
-import { useFontFace } from '~/hooks/useFontData'
+import { Font } from '@shared/types/dto'
+import { useFontFace, usePostScriptName } from '~/hooks/useFontData'
 
 type PreviewProps = HTMLAttributes<HTMLDivElement> & {
   font?: Font
+  postscriptFamilyName?: string | null
   size?: number
   children?: string
 }
@@ -33,13 +34,14 @@ const Container = styled(Box).attrs<ContainerProps>(renderContainerAttributes)`
 
 export default forwardRef(function Preview(
   props: PreviewProps,
-  ref: ForwardedRef<HTMLDivElement>
+  ref: ForwardedRef<HTMLDivElement>,
 ) {
-  const { font, size, ...restProps } = props
+  const { font, size, postscriptFamilyName, ...restProps } = props
   const isLoaded = useFontFace(font)
+  const name = usePostScriptName(postscriptFamilyName, font)
 
   return isLoaded ? (
-    <Container {...restProps} $name={font?.fullName} $size={size} ref={ref}>
+    <Container {...restProps} $name={name} $size={size} ref={ref}>
       {props.children}
     </Container>
   ) : null

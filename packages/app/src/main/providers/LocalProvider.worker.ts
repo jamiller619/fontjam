@@ -35,28 +35,47 @@ async function validate(filePath: string) {
   }
 }
 
+type ParsedFontWithStats = ParsedFont & {
+  fileCreatedAt: number | null
+  fileSize: number | null
+}
+
 async function parseFile(filePath: string) {
   const { isSupported, isValid } = await validate(filePath)
 
   if (!isValid || !isSupported) return
 
   const buffer = await fs.readFile(filePath)
+  const parsed = parse(filePath, buffer)
+  const stats = await fs.stat(filePath)
 
-  return parse(filePath, buffer)
+  if (parsed == null) {
+    return undefined
+  }
+
+  const data: ParsedFontWithStats = {
+    ...parsed,
+    fileCreatedAt: stats.birthtimeMs,
+    fileSize: stats.size,
+  }
+
+  return data
 }
 
 async function getFamilies(libraryPath: string) {
-  const families: Record<string, ParsedFont[]> = {}
+  const families: Record<string, ParsedFontWithStats[]> = {}
 
   for await (const ent of scandir(libraryPath)) {
     if (ent.type === 'file') {
       const parsed = await parseFile(ent.path)
 
       if (parsed != null) {
-        if (families[parsed.familyName] != null) {
-          families[parsed.familyName].push(parsed)
+        const key = parsed.postscriptFamilyName ?? parsed.familyName
+
+        if (families[key] != null) {
+          families[key].push(parsed)
         } else {
-          families[parsed.familyName] = [parsed]
+          families[key] = [parsed]
         }
       }
     }
@@ -74,7 +93,7 @@ console.log(`Found ${families.length} font families...`)
 
 const conn = connect()
 
-for await (const [familyName, fonts] of families) {
+for await (const [_, fonts] of families) {
   const ref = fonts.at(0)!
 
   const family: FontFamilyCreate = {
@@ -82,18 +101,20 @@ for await (const [familyName, fonts] of families) {
     designer: ref.designer,
     libraryId,
     license: ref.license,
-    name: familyName,
+    name: ref.familyName,
+    postscriptFamilyName: ref.postscriptFamilyName,
     popularity: null,
     tags: ref.tags ? JSON.stringify(ref.tags) : null,
     version: null,
     fonts: fonts.map((font) => ({
       fullName: font.fontName,
       path: font.path,
-      postscriptName: font.postscriptName,
+      postscriptFontName: font.postscriptFontName,
       style: font.style,
       weight: null,
       fvar: font.fvar,
       fileCreatedAt: font.fileCreatedAt,
+      fileSize: font.fileSize,
     })),
   }
 

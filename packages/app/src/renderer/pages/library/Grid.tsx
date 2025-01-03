@@ -3,9 +3,9 @@ import * as Portal from '@radix-ui/react-portal'
 import { Box, ScrollArea } from '@radix-ui/themes'
 import { ReactNode, Ref, forwardRef, useMemo, useState } from 'react'
 import { css, styled } from 'styled-components'
-import { FontFamily } from '@shared/types'
+import { FontFamily } from '@shared/types/dto'
 import { Card } from '~/components/card'
-import useAppState from '~/hooks/useAppState'
+import { useStore } from '~/store'
 
 type GridProps = {
   data?: FontFamily[]
@@ -50,8 +50,8 @@ const DragOverlayCard = styled(Card)`
 `
 
 function Grid({ data, children }: GridProps, ref: Ref<HTMLDivElement>) {
-  const [state] = useAppState()
-  const view = state['library.filters.view']
+  const view = useStore((state) => state['library.filters.view'])
+
   const [dragData, setDragData] = useState<FontFamily | null>(null)
   const cardStyle = useMemo(() => {
     return {

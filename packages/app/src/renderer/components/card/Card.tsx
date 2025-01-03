@@ -1,26 +1,24 @@
 import { useDraggable } from '@dnd-kit/core'
 import { Badge, Flex, Heading } from '@radix-ui/themes'
 import {
-  Fragment,
   HTMLAttributes,
   MouseEvent,
+  RefObject,
   useCallback,
   useRef,
 } from 'react'
 import { useLocation } from 'react-router-dom'
 import { css, styled } from 'styled-components'
 import { useHover } from 'usehooks-ts'
-import { Font, FontFamily } from '@shared/types'
+import { Font, FontFamily } from '@shared/types/dto'
 import AnimatedLink from '~/components/AnimatedLink'
 import ContextMenu, { ContextMenuItem } from '~/components/ContextMenu'
 import { Preview } from '~/components/preview'
-import useAppState from '~/hooks/useAppState'
-
-type View = 'grid' | 'list'
+import { View, useStore } from '~/store'
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
-  data: FontFamily
-  view: View
+  data: FontFamily | undefined
+  view?: View
 }
 
 const Header = styled(Heading).attrs({
@@ -100,6 +98,7 @@ const Footer = styled(Flex)`
   font-size: var(--font-size-1);
   flex-wrap: wrap;
   align-items: baseline;
+  margin-top: auto;
 `
 
 const contextMenuItems: ContextMenuItem[] = [
@@ -133,19 +132,23 @@ const Content = styled(Flex).attrs({
 `
 
 function parseStyles(fonts?: Font[]) {
-  return [...new Set(fonts?.map((font) => font.style))]
+  const styles = fonts?.map((font) =>
+    font.fvar == null ? font.style : 'Variable',
+  )
+
+  return [...new Set(styles)]
 }
 
-export default function Card({ data, view, ...props }: CardProps) {
-  const [state] = useAppState()
+export default function Card({ data, ...props }: CardProps) {
   const styles = parseStyles(data?.fonts)
-  const containerRef = useRef<HTMLDivElement>()
-  const isHovered = useHover(containerRef)
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  const containerRef = useRef<HTMLElement>()
+  const isHovered = useHover(containerRef as RefObject<HTMLElement>)
+  const { attributes, listeners, setNodeRef } = useDraggable({
     id: `${data?.id}-draggable`,
     data,
   })
   const location = useLocation()
+  const view = useStore((state) => state['library.filters.view'])
   // const id = useId()
   // const { attributes, listeners, setNodeRef, transform } = useDraggable({
   //   id: `${id}-draggable`,
@@ -176,7 +179,7 @@ export default function Card({ data, view, ...props }: CardProps) {
     }
   }, [])
 
-  return (
+  return data == null ? null : (
     <ContextMenu content={contextMenuItems}>
       <Container
         {...props}
@@ -187,32 +190,34 @@ export default function Card({ data, view, ...props }: CardProps) {
         }}
         $view={view}
         $isHovered={isHovered}>
-        {data != null && (
-          <Fragment>
-            <Header asChild>
-              <AnimatedLink
-                to={`/family/${data.id}?from=${location.pathname}`}
-                onClick={handleLinkClick}>
-                {data.name}
-              </AnimatedLink>
-            </Header>
-            <Content {...attributes} {...listeners}>
-              <Preview className="preview" font={data.fonts.at(0)} size={64}>
-                Ag
-              </Preview>
-              <Footer className="footer">
-                {styles?.slice(0, 4).map((style, i) => (
-                  <FooterBadge key={`${i}:${data.name}:${style}`}>
-                    {style}
-                  </FooterBadge>
-                ))}
-                {(styles?.length ?? 0) > 4 && (
-                  <FooterBadge>+{(styles?.length ?? 0) - 4}</FooterBadge>
-                )}
-              </Footer>
-            </Content>
-          </Fragment>
-        )}
+        <Header asChild>
+          <AnimatedLink
+            to={`/family/${data.id}?from=${location.pathname}`}
+            onClick={handleLinkClick}>
+            {data.name}
+          </AnimatedLink>
+        </Header>
+        <Content {...attributes} {...listeners}>
+          <Preview
+            className="preview"
+            font={data.fonts.at(0)}
+            postscriptFamilyName={data.postscriptFamilyName}
+            size={64}>
+            Ag
+          </Preview>
+          <Footer className="footer">
+            {styles
+              ?.slice(0, 4)
+              .map((style, i) => (
+                <FooterBadge key={`${i}:${data.name}:${style}`}>
+                  {style}
+                </FooterBadge>
+              ))}
+            {(styles?.length ?? 0) > 4 && (
+              <FooterBadge>+{(styles?.length ?? 0) - 4}</FooterBadge>
+            )}
+          </Footer>
+        </Content>
       </Container>
     </ContextMenu>
   )

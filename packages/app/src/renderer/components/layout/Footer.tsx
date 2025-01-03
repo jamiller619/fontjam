@@ -1,8 +1,8 @@
 import { Flex, Separator, Text } from '@radix-ui/themes'
 import styled from 'styled-components'
 import useAPI from '~/hooks/useAPI'
-import useAppState from '~/hooks/useAppState'
 import { useLibrary } from '~/hooks/useLibrary'
+import { useStore } from '~/store'
 
 const Container = styled(Flex)`
   z-index: 1;
@@ -15,9 +15,9 @@ const Container = styled(Flex)`
 `
 
 export default function Footer() {
-  const [state] = useAppState()
-  const library = useLibrary(state['library.active.id'])
-  const { data } = useAPI('get.stats', [state['library.active.id'], 'local'])
+  const activeLibraryId = useStore((state) => state['library.active.id'])
+  const library = useLibrary(activeLibraryId)
+  const { data } = useAPI('get.stats', [activeLibraryId!])
   const fontCount = data?.fonts || 0
   const familyCount = data?.families || 0
 

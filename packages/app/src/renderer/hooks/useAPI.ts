@@ -23,14 +23,14 @@ const defaultConfig: SWRConfiguration = {
 export default function useAPI<K extends APIKey>(
   key: K,
   params?: Parameters<API[K]>,
-  config?: SWRConfiguration
+  config?: SWRConfiguration,
 ) {
   const { data, error, mutate } = useSWR<Awaited<ReturnType<API[K]>>, Error>(
     [key, params],
     fetcher as ([key, params]: [K, Parameters<API[K]>]) => Awaited<
       ReturnType<API[K]>
     >,
-    { ...defaultConfig, ...config }
+    { ...defaultConfig, ...config },
   )
 
   const isLoading = !data && !error

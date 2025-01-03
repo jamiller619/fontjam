@@ -1,5 +1,5 @@
 import { Select } from '@radix-ui/themes'
-import { useAppStateTest } from '~/hooks/useAppState'
+import { useStore } from '~/store'
 
 const textOptions = {
   Pangrams: [
@@ -15,12 +15,10 @@ function getPreviewText(value: string) {
 }
 
 export default function TextOptions() {
-  const [_, setState] = useAppStateTest('preview.text')
+  const setPreviewText = useStore((state) => state.updatePreviewText)
 
   const handleChange = (value: string) => {
-    setState({
-      'preview.text': getPreviewText(value),
-    })
+    setPreviewText(getPreviewText(value))
   }
 
   return (

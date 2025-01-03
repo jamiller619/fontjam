@@ -1,4 +1,4 @@
-import { Font, FontFamily } from '@shared/types'
+import { Font, FontFamily } from '@shared/types/dto'
 import groupBy from '@shared/utils/groupBy'
 import { titleCase } from '@shared/utils/string'
 import type { FontFamilyJoinQueryRow } from './ReadRepository'
@@ -47,6 +47,7 @@ export function mapFontFamilyJoinQuery(...data: FontFamilyJoinQueryRow[]) {
       createdAt: ref.createdAt,
       libraryId: ref.libraryId,
       name: ref.name,
+      postscriptFamilyName: ref.postscriptFamilyName,
       popularity: ref.popularity,
       tags: ref.tags ? JSON.parse(ref.tags) : null,
       designer: ref.designer,
@@ -59,11 +60,12 @@ export function mapFontFamilyJoinQuery(...data: FontFamilyJoinQueryRow[]) {
           fullName: row.fullName,
           id: row.fontId,
           path: row.path,
-          postscriptName: row.postscriptName,
+          postscriptFontName: row.postscriptFontName,
           style: titleCase(row.style),
           weight: row.weight,
           fvar: row.fvar ? JSON.parse(row.fvar) : null,
           fileCreatedAt: row.fileCreatedAt,
+          fileSize: row.fileSize,
         }))
         .sort(sortFonts),
     }

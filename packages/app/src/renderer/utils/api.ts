@@ -4,11 +4,11 @@ import wait from '@shared/utils/wait'
 async function call<K extends APIKey, R extends Awaited<ReturnType<API[K]>>>(
   key: K,
   args: Parameters<API[K]>[] = [],
-  attempt = 0
+  attempt = 0,
 ): Promise<R> {
   if (attempt >= 9) {
     throw new Error(
-      `"${key}" failed -unable to retreive results after 10 attempts`
+      `"${key}" failed -unable to retreive results after 10 attempts`,
     )
   }
 

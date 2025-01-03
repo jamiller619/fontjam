@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useSessionStorage } from 'usehooks-ts'
-import { FontFamily, Library, Page, Sort } from '@shared/types'
+import { FontFamily, Library } from '@shared/types/dto'
+import { Page, Sort } from '@shared/types/utils'
 import api from '~/utils/api'
 import useAPI from './useAPI'
-import useAppState from './useAppState'
 
 export type LibraryWithDefaultSort = Library & {
   defaultSort: Sort<FontFamily>
@@ -36,7 +36,7 @@ function resolveDefaultSort(library: Library): Sort<FontFamily> {
 export function useLibraries() {
   const [libraries, setLibraries] = useSessionStorage<LibraryWithDefaultSort[]>(
     'libraries',
-    []
+    [],
   )
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const PAGE_SIZE = 36
 export function useFamilies(
   libraryId: number,
   page?: Page,
-  sort?: Sort<FontFamily>
+  sort?: Sort<FontFamily>,
 ) {
   const library = useLibrary(libraryId)
   const resolvedPage = page ?? { index: 0, length: PAGE_SIZE }
@@ -85,16 +85,16 @@ export function useFamilies(
     resolvedPage,
     resolvedSort,
   ])
-  const [state, setState] = useAppState()
 
-  useEffect(() => {
-    if (libraryId !== state['library.active.id']) {
-      setState((prev) => ({
-        ...prev,
-        'library.active.id': libraryId,
-      }))
-    }
-  }, [libraryId, setState, state])
+  // const [state, setState] = useAppStateTest('library.active.id')
+
+  // useEffect(() => {
+  //   if (libraryId !== state['library.active.id']) {
+  //     setState({
+  //       'library.active.id': libraryId,
+  //     })
+  //   }
+  // }, [libraryId, setState, state])
 
   return { data, mutate, error, isLoading }
 }

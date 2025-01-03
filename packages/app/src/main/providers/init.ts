@@ -1,4 +1,4 @@
-import { Library } from '@shared/types'
+import { Library } from '@shared/types/dto'
 import { LocalProvider } from './providers'
 
 // const providers = [new LocalProvider(), new

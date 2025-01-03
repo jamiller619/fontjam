@@ -2,19 +2,11 @@ import type { Sql } from 'sql-template-tag'
 import sqlite from 'sqlite3'
 
 export default class Driver {
-  #db: sqlite.Database
-
-  constructor(db: sqlite.Database) {
-    this.#db = db
-  }
-
-  getdb() {
-    return this.#db
-  }
+  constructor(public db: sqlite.Database) {}
 
   close() {
     return new Promise<void>((resolve, reject) => {
-      this.getdb().close(function closeCallback(err) {
+      this.db.close(function onDBCloseCallback(err) {
         if (err) reject(err)
         else resolve()
       })
@@ -23,7 +15,7 @@ export default class Driver {
 
   run(query: Sql) {
     return new Promise<number>((resolve, reject) => {
-      this.getdb().run(query.text, query.values, function runCallback(err) {
+      this.db.run(query.text, query.values, function onDBRunCallback(err) {
         if (err) reject(err)
         else resolve(this.lastID)
       })
@@ -32,7 +24,7 @@ export default class Driver {
 
   exec(query: Sql) {
     return new Promise<void>((resolve, reject) => {
-      this.getdb().exec(query.text, function execCallback(err) {
+      this.db.exec(query.text, function onDBExecCallback(err) {
         if (err) reject(err)
         else resolve()
       })
@@ -41,23 +33,19 @@ export default class Driver {
 
   query<R>(query: Sql) {
     return new Promise<R | undefined>((resolve, reject) => {
-      this.getdb().get(
-        query.text,
-        query.values,
-        function getCallback(err, row) {
-          if (err) reject(err)
-          else resolve(row as R)
-        },
-      )
+      this.db.get(query.text, query.values, function onDBGetCallback(err, row) {
+        if (err) reject(err)
+        else resolve(row as R)
+      })
     })
   }
 
   queryMany<R>(query: Sql) {
     return new Promise<R[]>((resolve, reject) => {
-      this.getdb().all(
+      this.db.all(
         query.text,
         query.values,
-        function allCallback(err, rows) {
+        function onDBAllCallback(err, rows) {
           if (err) reject(err)
           else resolve((rows ?? []) as R[])
         },

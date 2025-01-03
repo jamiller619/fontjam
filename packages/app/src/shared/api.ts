@@ -1,6 +1,7 @@
 import { ipcRenderer } from 'electron'
 import { FuseResult } from 'fuse.js'
-import { FontFamily, Library, OptionalId, Page, Paged, Sort } from './types'
+import { FontFamily, Library } from './types/dto'
+import { OptionalId, Page, Paged, Sort } from './types/utils'
 
 export type WindowControlAction = 'minimize' | 'maximize.toggle' | 'close'
 
@@ -43,13 +44,13 @@ const api = {
   'get.families'(
     libraryId: number,
     page: Page,
-    sort: Sort<FontFamily>
+    sort: Sort<FontFamily>,
   ): Promise<Paged<FontFamily> | undefined> {
     return ipcRenderer.invoke('get.families', libraryId, page, sort)
   },
   'search.fonts'(
     libraryId: number,
-    query: string
+    query: string,
   ): Promise<FuseResult<FontFamily>[]> {
     return ipcRenderer.invoke('search.fonts', libraryId, query)
   },

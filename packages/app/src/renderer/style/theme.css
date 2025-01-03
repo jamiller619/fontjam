@@ -19,7 +19,7 @@
 body,
 html {
   height: 100%;
-  /* background: transparent !important; */
+  background: none !important;
 }
 
 body {
@@ -33,10 +33,6 @@ body {
   --scale-1: var(--space-6);
   --default-border-color: var(--gray-a4);
   --default-border: 1px solid var(--default-border-color);
-}
-
-.dark-theme .radix-themes {
-  --gray-0: #0c0c0d;
 }
 
 /* @keyframes slide-from-right {

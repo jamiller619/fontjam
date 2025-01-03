@@ -2,7 +2,8 @@ import fs from 'node:fs/promises'
 import { Transform } from 'node:stream'
 import logger from 'logger'
 import sql, { Sql, bulk, raw } from 'sql-template-tag'
-import { BaseFont, Font, FontFamily, Page, Sort } from '@shared/types'
+import { BaseFont, Font, FontFamily } from '@shared/types/dto'
+import { Page, Sort } from '@shared/types/utils'
 import { toUnixTime } from '@shared/utils/datetime'
 import groupBy from '@shared/utils/groupBy'
 import { titleCase } from '@shared/utils/string'
@@ -84,11 +85,32 @@ function sortFonts(a: Font, b: Font) {
   return sb - sa
 }
 
+function mapFontFamilyJoin(ref: FontFamilyJoin) {
+  return function map(row: FontFamilyJoin) {
+    const data: Font = {
+      createdAt: row.fontCreatedAt,
+      familyId: ref.id,
+      fullName: row.fullName,
+      id: row.fontId,
+      path: row.path,
+      postscriptFontName: row.postscriptFontName,
+      style: titleCase(row.style),
+      weight: row.weight,
+      fileCreatedAt: row.fileCreatedAt,
+      fileSize: row.fileSize,
+      fvar: row.fvar,
+    }
+
+    return data
+  }
+}
+
 function mapFontFamilyJoins(...fontFamilies: FontFamilyJoin[]) {
   const families = groupBy(fontFamilies, (d) => String(d.id))
 
   return Object.values(families).map((rows) => {
     const ref = rows.at(0)!
+    const mapFont = mapFontFamilyJoin(ref)
 
     const family: FontFamily = {
       id: ref.id,
@@ -101,25 +123,15 @@ function mapFontFamilyJoins(...fontFamilies: FontFamilyJoin[]) {
       designer: ref.designer,
       license: ref.license,
       version: ref.version,
-      fonts: rows
-        .map((row) => ({
-          createdAt: row.fontCreatedAt,
-          familyId: ref.id,
-          fullName: row.fullName,
-          id: row.fontId,
-          path: row.path,
-          postscriptName: row.postscriptName,
-          style: titleCase(row.style),
-          weight: row.weight,
-        }))
-        .sort(sortFonts),
+      postscriptFamilyName: ref.postscriptFamilyName,
+      fonts: rows.map(mapFont).sort(sortFonts),
     }
 
     return family
   })
 }
 
-export type BaseFamilyWithFontPaths = Omit<TableMap['families'], 'fonts'> & {
+export type BaseFamilyWithFontPaths = TableMap['families'] & {
   fonts: (BaseFont & {
     path: string
   })[]
@@ -139,7 +151,7 @@ function resolveInstallDir() {
 class FontRepository extends Repository<TableMap> {
   async #findOrCreateFamily(
     libraryId: number,
-    data: Omit<TableMap['families'], 'id' | 'createdAt' | 'libraryId'>
+    data: Omit<TableMap['families'], 'id' | 'createdAt' | 'libraryId'>,
   ) {
     const familyRecord = await this.findFamilyByName(libraryId, data.name)
 
@@ -168,12 +180,12 @@ class FontRepository extends Repository<TableMap> {
 
   async upsertFamily(
     libraryId: number,
-    data: Omit<BaseFamilyWithFontPaths, 'id' | 'createdAt' | 'libraryId'>
+    data: Omit<BaseFamilyWithFontPaths, 'id' | 'createdAt' | 'libraryId'>,
   ) {
     const { fonts, ...family } = data
     const [wasFamilyCreated, record] = await this.#findOrCreateFamily(
       libraryId,
-      family
+      family,
     )
 
     if (record.libraryId !== libraryId) return wasFamilyCreated
@@ -207,7 +219,7 @@ class FontRepository extends Repository<TableMap> {
 
   async insertFamily(
     libraryId: number,
-    data: Omit<BaseFamilyWithFontPaths, 'id' | 'createdAt' | 'libraryId'>
+    data: Omit<BaseFamilyWithFontPaths, 'id' | 'createdAt' | 'libraryId'>,
   ) {
     const { fonts, ...family } = data
 
@@ -280,7 +292,7 @@ class FontRepository extends Repository<TableMap> {
       new Transform({
         objectMode: true,
         transform: (data, _, cb) => cb(null, data),
-      })
+      }),
     )
   }
 

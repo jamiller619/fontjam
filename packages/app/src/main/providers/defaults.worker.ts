@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import process from 'node:process'
-import { Library, LibraryType } from '@shared/types'
+import { Library, LibraryType } from '@shared/types/dto'
 import defaultLibraries from '~/data/defaultLibraries.json'
 import sysDirs from '~/data/systemDirectories.json'
 import WriteRepository from '~/db/WriteRepository'

@@ -9,9 +9,10 @@ import {
 import { AddItem } from '~/pages/add'
 import { Family } from '~/pages/family'
 import { Library } from '~/pages/library'
+import { useStore } from '~/store'
 import Layout from './layout/Layout'
 
-const HomeRouter = () => {
+function HomeRouter() {
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -21,13 +22,18 @@ const HomeRouter = () => {
   return null
 }
 
-const LibraryRouter = () => {
+function LibraryRouter() {
   const { id } = useParams()
+  const setActiveLibrary = useStore((state) => state.setActiveLibrary)
+
+  useEffect(() => {
+    setActiveLibrary(Number(id))
+  }, [id, setActiveLibrary])
 
   return <Library id={Number(id)} />
 }
 
-const FamilyRouter = () => {
+function FamilyRouter() {
   const { id } = useParams()
 
   return <Family id={Number(id)} />

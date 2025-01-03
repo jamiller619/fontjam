@@ -1,8 +1,9 @@
 import { Transform } from 'node:stream'
 import sql, { Sql, raw } from 'sql-template-tag'
-import { Font, FontFamily, Library, Page, Sort } from '@shared/types'
+import type { Driver } from '@fontjam/sqleasy'
+import { Font, FontFamily, Library } from '@shared/types/dto'
+import { Page, Sort } from '@shared/types/utils'
 import DatabaseStream from './DatabaseStream'
-import Database from './Driver'
 import filters, { createPagedResponse } from './filters'
 import { mapFontFamilyJoinQuery } from './fonts.map'
 import { mapLibrary } from './library.map'
@@ -21,6 +22,7 @@ function fontFamilyJoinQuery(subQuery: Sql, table = 'families') {
       families.id,
       families.createdAt,
       families.name,
+      families.postscriptFamilyName,
       families.tags,
       families.copyright,
       families.popularity,
@@ -31,7 +33,7 @@ function fontFamilyJoinQuery(subQuery: Sql, table = 'families') {
       fonts.createdAt as fontCreatedAt,
       fonts.fullName,
       fonts.path,
-      fonts.postscriptName,
+      fonts.postscriptFontName,
       fonts.style,
       fonts.weight
     FROM (
@@ -45,11 +47,11 @@ function fontFamilyJoinQuery(subQuery: Sql, table = 'families') {
 }
 
 export default class ReadRepository {
-  static async stream<T>(db: Database, query: Sql) {
-    return new DatabaseStream<T>(query, db.getdb())
+  static async stream<T>(driver: Driver, query: Sql) {
+    return new DatabaseStream<T>(query, driver.db)
   }
 
-  static async streamFamilies(db: Database, libraryId: number) {
+  static async streamFamilies(db: Driver, libraryId: number) {
     const query = sql`
       SELECT * FROM families
       WHERE libraryId = ${libraryId}
@@ -66,7 +68,7 @@ export default class ReadRepository {
   }
 
   static async executeView<T>(
-    db: Database,
+    driver: Driver,
     viewName: string,
     page: Page,
     sort: Sort<T>,
@@ -85,14 +87,14 @@ export default class ReadRepository {
       FROM ${raw(viewName)}
     `
 
-    const count = await db.query<{ total: number }>(countQuery)
-    const records = await db.queryMany<FontFamilyJoinQueryRow>(query)
+    const count = await driver.query<{ total: number }>(countQuery)
+    const records = await driver.queryMany<FontFamilyJoinQueryRow>(query)
     const mapped = mapFontFamilyJoinQuery(...records)
 
     return createPagedResponse(count?.total ?? 0, page.index, mapped)
   }
 
-  static getFont(db: Database, fontId: number) {
+  static getFont(db: Driver, fontId: number) {
     const query = sql`
       SELECT * FROM fonts
       WHERE id = ${fontId}
@@ -101,7 +103,7 @@ export default class ReadRepository {
     return db.query<Font>(query)
   }
 
-  static async getFamily(db: Database, familyId: number) {
+  static async getFamily(db: Driver, familyId: number) {
     const query = fontFamilyJoinQuery(sql`
       WHERE id = ${familyId}
     `)
@@ -114,37 +116,56 @@ export default class ReadRepository {
   }
 
   static async getFamilies(
-    db: Database,
+    db: Driver,
     libraryId: number,
     page: Page,
     sort: Sort<FontFamily>,
   ) {
+    if (libraryId == null) {
+      return
+    }
+
     const newSort = {
       col: `families.${sort.col}`,
       dir: sort.dir,
     }
 
-    const query = fontFamilyJoinQuery(sql`
-      WHERE libraryId = ${libraryId}
+    const query = fontFamilyJoinQuery(
+      sql`
+      WHERE libraryId = ${raw(String(libraryId))}
       ${filters.sort(newSort)}
       ${filters.page(page)}
-    `)
+    `,
+    )
 
     const data = await db.queryMany<FontFamilyJoinQueryRow>(query)
 
     const total = await this.countFamilies(db, libraryId)
-    const records = mapFontFamilyJoinQuery(...data)
+    const records = mapFontFamilyJoinQuery(...data).sort((a, b) => {
+      const acol = a[sort.col]
+      const bcol = b[sort.col]
+
+      if (!acol || !bcol) {
+        return 0
+      }
+
+      if (acol < bcol) {
+        return sort.dir === 'asc' ? -1 : 1
+      }
+
+      return sort.dir === 'asc' ? 1 : -1
+    })
 
     return createPagedResponse(total, page.index, records)
   }
 
-  static async getLibraries(db: Database) {
+  static async getLibraries(db: Driver) {
     const records = await db.queryMany<Library>(sql`SELECT * FROM libraries`)
 
     return records.map(mapLibrary)
   }
 
-  static async getLibrary(db: Database, id: number) {
+  static async getLibrary(db: Driver, id: number) {
     const query = sql`
       SELECT * FROM libraries
       WHERE id = ${id}
@@ -155,7 +176,7 @@ export default class ReadRepository {
     if (data) return mapLibrary(data)
   }
 
-  static async countFonts(db: Database, libraryId: number) {
+  static async countFonts(db: Driver, libraryId: number) {
     const query = sql`
       SELECT COUNT(*) AS total
       FROM fonts
@@ -169,7 +190,7 @@ export default class ReadRepository {
     return result?.total ?? 0
   }
 
-  static async countFamilies(db: Database, libraryId: number) {
+  static async countFamilies(db: Driver, libraryId: number) {
     const query = sql`
       SELECT COUNT(*) AS total
       FROM families
@@ -181,7 +202,7 @@ export default class ReadRepository {
     return result?.total ?? 0
   }
 
-  static async getLibraryStats(db: Database, libraryId?: number) {
+  static async getLibraryStats(db: Driver, libraryId?: number) {
     if (!libraryId) {
       return {
         families: 0,

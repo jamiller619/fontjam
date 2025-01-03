@@ -3,18 +3,16 @@ import {
   ChevronLeft20Filled as IndexIcon,
   PreviewLink16Regular as PreviewIcon,
 } from '@fluentui/react-icons'
-import { Box, Flex, Heading, ScrollArea, Tabs } from '@radix-ui/themes'
+import { Box, Flex, Heading, Tabs } from '@radix-ui/themes'
 import { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
 import { useSearchParams } from 'react-router-dom'
 import styled, { css, keyframes } from 'styled-components'
 import type { Keyframes } from 'styled-components/dist/types'
 import { useLocalStorage } from 'usehooks-ts'
-import { Font } from '@shared/types'
+import { Font } from '@shared/types/dto'
 import AnimatedLink from '~/components/AnimatedLink'
-import { Preview } from '~/components/preview'
 import useAPI from '~/hooks/useAPI'
-import { useAppStateTest } from '~/hooks/useAppState'
 import Glyphs from './components/Glyphs'
 import PreviewEditor from './components/PreviewEditor'
 
@@ -69,13 +67,13 @@ function staggerAnimation(keyFrames: Keyframes) {
   `
 }
 
-const StyledPreview = styled(Preview)`
-  view-transition-name: preview;
-  margin: var(--space-3) 0;
-  padding: var(--space-5);
-  border: var(--default-border);
-  background: var(--gray-1);
-`
+// const StyledPreview = styled(Preview)`
+//   view-transition-name: preview;
+//   margin: var(--space-3) 0;
+//   padding: var(--space-5);
+//   border: var(--default-border);
+//   background: var(--gray-1);
+// `
 
 const TabHeader = styled(Flex).attrs({
   align: 'center',
@@ -119,6 +117,11 @@ const LeftColumn = styled(Column)`
   ${staggerAnimation(fadein)}
 `
 
+const SingleColumn = styled(Box)`
+  ${staggerAnimation(fadein)}
+  width: 100%;
+`
+
 type CustomFontProps = {
   $font?: string
 }
@@ -152,26 +155,17 @@ const Content = styled(Tabs.Content)`
   }
 `
 
-const GlyphsContainer = styled(ScrollArea).attrs({
-  type: 'hover',
-  scrollbars: 'vertical',
-})`
-  // Header:                  56px
-  // Font Select:             57px
-  // "Glyphs" Heading:        26px
-  // Glyphs Section Padding:  var(--space-4) * 2
-  // Footer:                  24px
-  height: calc(100vh - (56px + 57px + 26px + (var(--space-4) * 2) + 24px));
-`
-
 const TabContent = styled(Box)`
-  flex: 1;
+  height: calc(100vh - 125px);
+  overflow-y: auto;
+  overflow-x: hidden;
 `
 
-type Preview = {
-  size: number
-  text: string
-}
+const TabsList = styled(Tabs.List)`
+  svg {
+    padding-right: var(--space-1);
+  }
+`
 
 export default function Family({ id }: FamilyProps) {
   const { data: family } = useAPI('get.family', [id])
@@ -182,10 +176,8 @@ export default function Family({ id }: FamilyProps) {
   const [activeTab, setActiveTab] = useState<'preview' | 'glyphs'>('preview')
   const [preview, setPreview] = useLocalStorage(
     'preview.markdown.all',
-    '# Hello world'
+    '# Hello world',
   )
-
-  // con
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as 'preview' | 'glyphs')
@@ -210,43 +202,17 @@ export default function Family({ id }: FamilyProps) {
       </Header>
       <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
         <TabHeader>
-          {/* <Tabs.List>
-            {family?.fonts.map((font) => (
-              <Tabs.Trigger key={font.id} value={font.id.toString()}>
-                {font.style}
-                {font.weight ? `:${font.weight}` : ''}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List> */}
-          <Tabs.List>
+          <TabsList>
             <Tabs.Trigger value="preview">
-              <PreviewIcon />
-              &nbsp;&nbsp;Preview
+              <PreviewIcon /> Preview
             </Tabs.Trigger>
             <Tabs.Trigger value="glyphs">
-              <GlyphIcon />
-              &nbsp;&nbsp;Glyphs
+              <GlyphIcon /> Glyphs
             </Tabs.Trigger>
-          </Tabs.List>
-          {/* <Text size="2">Style:</Text>
-          {family?.fonts && family?.fonts.length > 1 ? (
-            <Select.Root
-              value={activeFont?.id.toString()}
-              onValueChange={handleFontChange}>
-              <Select.Trigger />
-              <SelectContent>
-                {family?.fonts.map((font) => (
-                  <Select.Item key={font.id} value={font.id.toString()}>
-                    {font.style}
-                    {font.weight ? `:${font.weight}` : ''}
-
-                  </Select.Item>
-                ))}
-              </SelectContent>
-            </Select.Root>
-          ) : (
-            family?.fonts.at(0)?.style
-          )} */}
+            <Tabs.Trigger value="meta">
+              <GlyphIcon /> Meta
+            </Tabs.Trigger>
+          </TabsList>
         </TabHeader>
         <TabContent>
           <Content value="preview">
@@ -264,17 +230,24 @@ export default function Family({ id }: FamilyProps) {
             </RightColumn>
           </Content>
           <Content value="glyphs">
-            <LeftColumn>
+            <SingleColumn>
               <ContentHeader>Glyphs</ContentHeader>
-              <GlyphsContainer>
-                <Glyphs data={family?.fonts.at(0)} />
-              </GlyphsContainer>
-            </LeftColumn>
+              <Glyphs
+                data={family?.fonts.at(0)}
+                postscriptFamilyName={family?.postscriptFamilyName}
+              />
+            </SingleColumn>
           </Content>
           {/* {family?.fonts.map((font) => (
             <Content key={font.id} value={font.id.toString()}>
             </Content>
           ))} */}
+          <Content value="meta">
+            <LeftColumn>
+              <pre>{JSON.stringify(family, null, 2)}</pre>
+              <pre>{JSON.stringify(family?.fonts.at(0), null, 2)}</pre>
+            </LeftColumn>
+          </Content>
         </TabContent>
       </Tabs.Root>
     </Box>

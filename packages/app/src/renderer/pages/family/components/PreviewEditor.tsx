@@ -25,6 +25,11 @@ export default function PreviewEditor({
     <Editor
       theme="vs-dark"
       height="70vh"
+      options={{
+        scrollbar: {
+          vertical: 'hidden',
+        },
+      }}
       defaultLanguage="markdown"
       value={value}
       onChange={(val) => onValueChange(val ?? '')}

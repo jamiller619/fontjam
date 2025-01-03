@@ -1,8 +1,9 @@
 import sql, { bulk, raw } from 'sql-template-tag'
-import { Font, Library, OptionalId } from '@shared/types'
+import type { Driver } from '@fontjam/sqleasy'
+import { Font, Library } from '@shared/types/dto'
+import { OptionalId } from '@shared/types/utils'
 import { toUnixTime } from '@shared/utils/datetime'
 import type { Collection } from './CollectionRepository'
-import Driver from './Driver'
 import type { FontEntity, FontFamilyEntity } from './types'
 
 type TableMap = {
@@ -38,7 +39,12 @@ export default class WriteRepository {
     libraryId: number,
     data: Omit<FontFamilyCreate, 'fonts'>,
   ) {
-    const existing = await this.findFamilyByName(driver, libraryId, data.name)
+    const existing = await this.findFamilyByName(
+      driver,
+      libraryId,
+      data.name,
+      data.postscriptFamilyName,
+    )
 
     if (existing == null) {
       return await WriteRepository.insert(driver, 'families', {
@@ -51,10 +57,16 @@ export default class WriteRepository {
     return existing
   }
 
-  static findFamilyByName(driver: Driver, libraryId: number, name: string) {
+  static findFamilyByName(
+    driver: Driver,
+    libraryId: number,
+    name: string,
+    postscriptFamilyName: string | null,
+  ) {
     const query = sql`
       SELECT * FROM families
       WHERE name = ${name}
+      OR postscriptFamilyName = ${postscriptFamilyName}
       AND libraryId = ${libraryId}
     `
 
@@ -194,9 +206,19 @@ export default class WriteRepository {
     driver: Driver,
     data: Omit<Library, 'createdAt' | 'id'>,
   ) {
-    await this.insert(driver, 'libraries', {
-      ...data,
-      createdAt: toUnixTime(),
-    })
+    const existingQuery = sql`
+      SELECT id FROM libraries
+      WHERE name = ${data.name}
+    `
+
+    const existing =
+      (await driver.query<Pick<Library, 'id'>>(existingQuery)) != null
+
+    if (!existing) {
+      await this.insert(driver, 'libraries', {
+        ...data,
+        createdAt: toUnixTime(),
+      })
+    }
   }
 }

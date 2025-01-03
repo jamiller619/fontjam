@@ -16,16 +16,9 @@ const OutletContainer = styled(Flex)`
   flex-grow: 1;
   flex-direction: column;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--gray-3) 20%, var(--gray-a2) 80%);
 `
 
-const Loader = styled(Flex)`
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: var(--gray-a3);
-`
+const isWindows = window.navigator.platform.startsWith('Win')
 
 export default function Layout() {
   return (
@@ -37,7 +30,7 @@ export default function Layout() {
         </OutletContainer>
       </Container>
       <Footer />
-      <WindowControls />
+      {isWindows && <WindowControls />}
       <div id="portalContainer" />
     </Fragment>
   )

@@ -3,7 +3,7 @@ import { Flex, Heading, IconButton } from '@radix-ui/themes'
 import { MouseEvent, ReactNode } from 'react'
 import { styled } from 'styled-components'
 import useAnimatedNavigate from '~/hooks/useAnimatedNavigate'
-import useAppState from '~/hooks/useAppState'
+import { useStore } from '~/store'
 
 type NavSectionProps = {
   children?: ReactNode
@@ -56,7 +56,7 @@ const AddButton = styled(IconButton).attrs({
 `
 
 export default function MenuSection({ children, label }: NavSectionProps) {
-  const [state] = useAppState()
+  const menuOpen = useStore((state) => state['menu.open'])
   const navigate = useAnimatedNavigate()
 
   const handleAddClick = (e: MouseEvent) => {
@@ -73,7 +73,7 @@ export default function MenuSection({ children, label }: NavSectionProps) {
         <Label>
           <span>{label}</span>
         </Label>
-        {state['menu.open'] && (
+        {menuOpen && (
           <AddButton onClick={handleAddClick}>
             <AddIcon />
           </AddButton>

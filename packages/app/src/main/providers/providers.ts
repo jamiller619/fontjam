@@ -1,4 +1,4 @@
-import { Library } from '@shared/types'
+import { Library } from '@shared/types/dto'
 import Provider, { IProvider } from './Provider'
 
 export class LocalProvider extends Provider implements IProvider {

@@ -1,11 +1,12 @@
 import { Flex } from '@radix-ui/themes'
 import { HTMLAttributes, memo } from 'react'
 import styled from 'styled-components'
-import { Font } from '@shared/types'
+import { Font } from '@shared/types/dto'
 import useFontData, { useFontFace } from '~/hooks/useFontData'
 
 type GlyphsProps = HTMLAttributes<HTMLDivElement> & {
   data?: Font
+  postscriptFamilyName?: string | null
 }
 
 type GlyphProps = {
@@ -68,9 +69,9 @@ function Glyph({ data }: GlyphProps) {
   )
 }
 
-function Glyphs({ data, ...props }: GlyphsProps) {
-  const isLoaded = useFontFace(data)
+function Glyphs({ data, postscriptFamilyName, ...props }: GlyphsProps) {
   const fontData = useFontData(data)
+  const isLoaded = useFontFace(data, postscriptFamilyName)
 
   const loop = new Array(fontData?.numGlyphs).fill(false)
 

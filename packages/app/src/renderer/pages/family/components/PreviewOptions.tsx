@@ -5,7 +5,8 @@ import {
 import { Flex, Slider, Text, TextArea } from '@radix-ui/themes'
 import { ChangeEvent } from 'react'
 import styled from 'styled-components'
-import { useAppStateTest } from '~/hooks/useAppState'
+import { useStore } from '~/store'
+import { Store } from '~/store/useStore'
 import TextOptions from './TextOptions'
 
 const Container = styled(Flex).attrs({
@@ -24,24 +25,25 @@ const OptionContainer = styled(Flex).attrs({
   flex: 1;
 `
 
-const TextSizeDisplay = styled('div')`
-  width: 42px;
-  text-align: right;
-`
+function selector(state: Store) {
+  return {
+    previewSize: state['preview.size'],
+    previewText: state['preview.text'],
+    setPreviewSize: state.updatePreviewSize,
+    setPreviewText: state.updatePreviewText,
+  }
+}
 
 export default function PreviewOptions() {
-  const [state, setState] = useAppStateTest('preview.size', 'preview.text')
+  const { previewSize, previewText, setPreviewSize, setPreviewText } =
+    useStore(selector)
 
   const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setState({
-      'preview.text': e.target.value,
-    })
+    setPreviewText(e.target.value)
   }
 
   const handleSizeChange = (value: number[]) => {
-    setState({
-      'preview.size': value.at(0),
-    })
+    setPreviewSize(value.at(0)!)
   }
 
   return (
@@ -55,7 +57,7 @@ export default function PreviewOptions() {
           <TextSmallIcon />
           <TextSizeContainer>
             <Slider
-              defaultValue={[state['preview.size']]}
+              defaultValue={[previewSize]}
               min={8}
               max={200}
               onValueChange={handleSizeChange}
@@ -68,11 +70,7 @@ export default function PreviewOptions() {
           </TextSizeDisplay> */}
         </OptionContainer>
       </Flex>
-      <TextArea
-        mt="2"
-        value={state['preview.text']}
-        onChange={handleTextChange}
-      />
+      <TextArea mt="2" value={previewText} onChange={handleTextChange} />
     </Container>
   )
 }

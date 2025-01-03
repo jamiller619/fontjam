@@ -6,8 +6,8 @@ const filters = {
     return sql`ORDER BY ${raw(String(sort.col))} ${raw(sort.dir.toUpperCase())}`
   },
   page(page: Page) {
-    return sql`LIMIT ${raw(String(page.index * page.length))}, ${raw(
-      String(page.length)
+    return sql`LIMIT ${raw(String(page.length))} OFFSET ${raw(
+      String(page.index * page.length),
     )}`
   },
 }
@@ -17,7 +17,7 @@ export default filters
 export function createPagedResponse<T>(
   total: number,
   index: number,
-  records: T[]
+  records: T[],
 ) {
   const resp: Paged<T> = {
     total,

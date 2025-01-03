@@ -5,7 +5,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "node --loader ts-node/esm --env-file .env dist/cli.js",
+    "start": "node --env-file .env dist/cli.js",
     "build": "yarn tsup src/google-fonts/cli.ts --format esm"
   },
   "devDependencies": {

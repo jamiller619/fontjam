@@ -1,5 +1,5 @@
 import { Text } from '@radix-ui/themes'
-import { HTMLAttributes, useRef, useState } from 'react'
+import { HTMLAttributes, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 import AnimatedLink from '~/components/AnimatedLink'
@@ -85,14 +85,17 @@ export default function MenuItem(props: NavItemProps) {
     dropover: isOver,
   })
 
-  const handlers = {
-    onDropOver() {
-      setIsOver(true)
-    },
-    onDropOut() {
-      setIsOver(false)
-    },
-  }
+  const handlers = useMemo(
+    () => ({
+      onDropOver() {
+        setIsOver(true)
+      },
+      onDropOut() {
+        setIsOver(false)
+      },
+    }),
+    [],
+  )
 
   return (
     <Droppable as="li" id={label} {...rest} {...handlers}>

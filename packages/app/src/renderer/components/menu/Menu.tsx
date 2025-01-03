@@ -4,18 +4,17 @@ import {
 } from '@fluentui/react-icons'
 import { Flex, IconButton } from '@radix-ui/themes'
 import styled, { css } from 'styled-components'
-import { Library, LibraryType } from '@shared/types'
+import { Library, LibraryType } from '@shared/types/dto'
 import { capitalize } from '@shared/utils/string'
 import Logo from '~/components/Logo'
-import useAppState from '~/hooks/useAppState'
 import { useLibraries } from '~/hooks/useLibrary'
+import { useStore } from '~/store'
 import MenuItem from './MenuItem'
 import MenuSection from './MenuSection'
 
 const Container = styled(Flex)<{ $isOpen: boolean }>`
   flex-direction: column;
   gap: var(--space-3);
-  background-color: var(--gray-surface);
   padding: var(--space-3);
   color: var(--gray-11);
   font-weight: 500;
@@ -69,7 +68,9 @@ const ToggleButton = styled(IconButton).attrs({
   align-self: end;
   margin: 6px 0;
   cursor: pointer;
-  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+  transition:
+    background-color 200ms ease-in-out,
+    color 200ms ease-in-out;
 
   &:hover {
     color: var(--gray-12);
@@ -118,20 +119,18 @@ export default function Menu() {
   const libraries = useLibraries()
   const getLibraries = createLibraryTypeFilter(libraries)
 
-  const [state, setAppState] = useAppState()
+  const menuOpen = useStore((state) => state['menu.open'])
+  const toggleMenu = useStore((state) => state.toggleMenu)
 
   const handleToggleClick = () => {
-    setAppState((prev) => ({
-      ...prev,
-      'menu.open': !prev['menu.open'],
-    }))
+    toggleMenu()
   }
 
   return (
-    <Container $isOpen={state['menu.open']}>
+    <Container $isOpen={menuOpen}>
       <StyledLogo />
       <ToggleButton onClick={handleToggleClick}>
-        {state['menu.open'] ? <CollapseIcon /> : <ExpandIcon />}
+        {menuOpen ? <CollapseIcon /> : <ExpandIcon />}
       </ToggleButton>
       <Nav>
         <LibrarySection type="local" data={getLibraries('local')} />
