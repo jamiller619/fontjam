@@ -1,2 +1,2 @@
 # fontjam
-A desktop application to manage your fonts.
+A desktop app for managing fonts. For macOS, Windows and Linux.
