@@ -26,7 +26,7 @@ const DEFAULT_SORT: Sort<FontFamily> = {
 
 // Dimensions for grid and list cells
 const CELL_SIZE = {
-  grid: { width: 200, height: 250 },
+  grid: { width: 220, height: 250 },
   list: { height: 120 },
 }
 
@@ -106,7 +106,7 @@ function getCellStyle(
     ...style,
     top: Number(style.top) + GUTTER,
     left: Number(style.left) + GUTTER,
-    width: width - GUTTER * 2 - 15,
+    width: width - GUTTER * 2,
     height: height != null ? height - GUTTER : Number(style.height) - GUTTER,
   }
 }
