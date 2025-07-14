@@ -6,9 +6,9 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom'
-import { AddItem } from '~/pages/add'
-import { Family } from '~/pages/family'
-import { Library } from '~/pages/library'
+import { AddItem } from '~/screens/add'
+import { Family } from '~/screens/family'
+import { Library } from '~/screens/library'
 import { useStore } from '~/store'
 import Layout from './layout/Layout'
 

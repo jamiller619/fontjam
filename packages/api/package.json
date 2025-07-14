@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "type": "module",
   "license": "MIT",
-  "private": true,
   "scripts": {
     "start": "node --env-file .env dist/cli.js",
     "build": "yarn tsup src/google-fonts/cli.ts --format esm"

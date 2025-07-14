@@ -4,7 +4,6 @@
   "main": "dist/index.js",
   "type": "module",
   "license": "MIT",
-  "private": true,
   "scripts": {
     "start": "yarn electron .",
     "start:dev": "yarn electron --trace-warnings .",
