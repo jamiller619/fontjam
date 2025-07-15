@@ -30,7 +30,11 @@ function LibraryRouter() {
     setActiveLibrary(Number(id))
   }, [id, setActiveLibrary])
 
-  return <Library id={Number(id)} />
+  // The key prop is used to force a re-render of the Library component
+  // when the id changes, which is necessary for all the
+  // state in the component to reset:
+  // https://stackoverflow.com/questions/21749798/how-can-i-reset-a-react-component-including-all-transitively-reachable-state/21750576#21750576
+  return <Library id={Number(id)} key={new Date().getTime()} />
 }
 
 function FamilyRouter() {

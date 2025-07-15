@@ -1,19 +1,16 @@
-import { useDraggable } from '@dnd-kit/core'
-import { Badge, Flex, Heading } from '@radix-ui/themes'
 import {
-  HTMLAttributes,
-  MouseEvent,
-  RefObject,
-  useCallback,
-  useRef,
-} from 'react'
+  CaretLeft16Filled as CaretLeftIcon,
+  CaretRight16Filled as CaretRightIcon,
+} from '@fluentui/react-icons'
+import { Flex, Heading, IconButton as RUIconButton } from '@radix-ui/themes'
+import { HTMLAttributes, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { css, styled } from 'styled-components'
-import { useHover } from 'usehooks-ts'
+import { styled } from 'styled-components'
+import { useDarkMode } from 'usehooks-ts'
 import { Font, FontFamily } from '@shared/types/dto'
 import AnimatedLink from '~/components/AnimatedLink'
 import ContextMenu, { ContextMenuItem } from '~/components/ContextMenu'
-import { Preview } from '~/components/preview'
+import { FontPreview } from '~/components/font-preview'
 import { View, useStore } from '~/store'
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
@@ -24,81 +21,64 @@ type CardProps = HTMLAttributes<HTMLDivElement> & {
 const Header = styled(Heading).attrs({
   size: '5',
 })`
-  margin-bottom: var(--space-1);
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  padding-right: var(--space-5);
+  width: 78%;
   letter-spacing: 0.02em;
   color: var(--accent-8);
   text-decoration: none;
   line-height: 1.1;
-  font-weight: 650;
-
-  a {
-    position: relative;
-    z-index: 1000;
-  }
+  font-weight: 500;
 `
 
 type ContainerProps = {
   $view: View
-  $isHovered: boolean
 }
 
 const Container = styled(Flex)<ContainerProps>`
-  padding: var(--space-4) var(--space-3) var(--space-3);
+  padding: var(--space-3);
   background-color: var(--gray-a2);
   flex-direction: column;
-  color: var(--gray-9);
-  transition-timing-function: ease-in;
+  color: var(--gray-11);
+  transition-timing-function: ease-out;
   transition-property: background-color, color, box-shadow, transform, height;
   transition-duration: 100ms;
-  /* box-shadow: none; */
-  cursor: grab;
-  touch-action: none;
+
+  canvas {
+    opacity: 0.3;
+  }
 
   border-radius: ${({ $view }) =>
     $view === 'grid' ? 'var(--radius-6)' : 'var(--radius-3)'};
-  /* &:active {
-    cursor: grabbing;
 
-    transition-duration: 0ms;
-  } */
-  ${({ $isHovered, $view }) =>
-    $isHovered
-      ? css`
-          background-color: var(--gray-a3);
-          color: var(--gray-12);
-          transform: ${$view === 'grid' ? 'scale(1.03)' : 'scale(1.002)'};
-          box-shadow: 0 3px 30px 5px var(--black-a3);
-
-          ${Header} {
-            color: var(--accent-9);
-          }
-        `
-      : ''}/* &:hover {
+  &:hover {
     background-color: var(--gray-a3);
-    color: var(--gray-12);
     transform: ${({ $view }) =>
-    $view === 'grid' ? 'scale(1.03)' : 'scale(1.002)'};
+      $view === 'grid' ? 'scale(1.03)' : 'scale(1.002)'};
     box-shadow: 0 3px 30px 5px var(--black-a3);
 
     ${Header} {
       color: var(--accent-9);
     }
-  } */
+
+    canvas {
+      opacity: 1;
+    }
+  }
 `
 
-const FooterBadge = styled(Badge).attrs({
-  variant: 'soft',
-  color: 'gray',
-  mr: '1',
-  mt: '1',
-})``
-
 const Footer = styled(Flex)`
-  gap: 0;
+  gap: var(--space-1);
   font-size: var(--font-size-1);
-  flex-wrap: wrap;
-  align-items: baseline;
-  margin-top: auto;
+  flex-direction: column;
+  align-items: center;
+  height: 20%;
+
+  .num-styles {
+    color: var(--gray-10);
+  }
 `
 
 const contextMenuItems: ContextMenuItem[] = [
@@ -112,23 +92,16 @@ const contextMenuItems: ContextMenuItem[] = [
   },
 ]
 
-// const applyViewTransition = (name: string, ref?: RefObject<HTMLElement>) => {
-//   if (ref && ref.current) {
-//     ref.current.style.viewTransitionName = name
-//   }
+const FooterStyleSelect = styled(Flex)`
+  align-items: center;
+  width: -webkit-fill-available;
+  justify-content: space-around;
+  gap: var(--space-1);
 
-//   return function applyViewTransitionCleanup() {
-//     if (ref && ref.current) {
-//       ref.current.style.viewTransitionName = ''
-//     }
-//   }
-// }
-const Content = styled(Flex).attrs({
-  direction: 'column',
-  gap: '1',
-  justify: 'between',
-})`
-  height: 100%;
+  span {
+    flex: 1;
+    text-align: center;
+  }
 `
 
 function parseStyles(fonts?: Font[]) {
@@ -139,85 +112,78 @@ function parseStyles(fonts?: Font[]) {
   return [...new Set(styles)]
 }
 
+const Preview = styled(FontPreview)`
+  height: 80%;
+`
+
+const IconButton = styled(RUIconButton).attrs({
+  size: '3',
+  variant: 'ghost',
+  color: 'gray',
+})``
+
 export default function Card({ data, ...props }: CardProps) {
   const styles = parseStyles(data?.fonts)
-  const containerRef = useRef<HTMLElement>()
-  const isHovered = useHover(containerRef as RefObject<HTMLElement>)
-  const { attributes, listeners, setNodeRef } = useDraggable({
-    id: `${data?.id}-draggable`,
-    data,
-  })
+  const containerRef = useRef<HTMLDivElement>(null)
   const location = useLocation()
   const view = useStore((state) => state['library.filters.view'])
-  // const id = useId()
-  // const { attributes, listeners, setNodeRef, transform } = useDraggable({
-  //   id: `${id}-draggable`,
-  // })
-  // const headingRef = useRef<HTMLHeadingElement>(null)
-  // const previewRef = useRef<HTMLDivElement>(null)
+  const { isDarkMode } = useDarkMode()
+  const previewColor = isDarkMode ? 'white' : 'black'
+  const previewSize = useStore((state) => state['preview.size'])
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const previewFont = data?.fonts.at(selectedIndex)
+  const rect = containerRef.current?.getBoundingClientRect()
 
-  // useImperativeHandle(ref, () => containerRef.current as HTMLDivElement, [
-  //   containerRef,
-  // ])
+  const handleNextStyle = () => {
+    if (styles.length <= 1) return
 
-  // In this specific case, by intercepting the event in the
-  // `AnimatedLink` component, we can return a function to
-  // the Click event that will run after the transition
-  // begins, but before the DOM updates, which is what
-  // allows the whole thing to work.
-  const handleLinkClick = useCallback((e: MouseEvent) => {
-    e.preventDefault()
+    const nextIndex = (selectedIndex + 1) % styles.length
+    setSelectedIndex(nextIndex)
+  }
 
-    // const clean = [
-    // applyViewTransition('card', containerRef),
-    // applyViewTransition('heading', headingRef),
-    // applyViewTransition('preview', previewRef),
-    // ]
+  const handlePrevStyle = () => {
+    if (styles.length <= 1) return
 
-    return function linkClickCleanup() {
-      // clean.map((c) => c())
-    }
-  }, [])
+    const nextIndex = (selectedIndex - 1 + styles.length) % styles.length
+    setSelectedIndex(nextIndex)
+  }
 
   return data == null ? null : (
     <ContextMenu content={contextMenuItems}>
-      <Container
-        {...props}
-        ref={(el) => {
-          containerRef.current = el!
-
-          setNodeRef(el)
-        }}
-        $view={view}
-        $isHovered={isHovered}>
+      <Container {...props} ref={containerRef} $view={view}>
         <Header asChild>
-          <AnimatedLink
-            to={`/family/${data.id}?from=${location.pathname}`}
-            onClick={handleLinkClick}>
+          <AnimatedLink to={`/family/${data.id}?from=${location.pathname}`}>
             {data.name}
           </AnimatedLink>
         </Header>
-        <Content {...attributes} {...listeners}>
-          <Preview
-            className="preview"
-            font={data.fonts.at(0)}
-            postscriptFamilyName={data.postscriptFamilyName}
-            size={64}>
-            Ag
-          </Preview>
-          <Footer className="footer">
-            {styles
-              ?.slice(0, 4)
-              .map((style, i) => (
-                <FooterBadge key={`${i}:${data.name}:${style}`}>
-                  {style}
-                </FooterBadge>
-              ))}
-            {(styles?.length ?? 0) > 4 && (
-              <FooterBadge>+{(styles?.length ?? 0) - 4}</FooterBadge>
+        <Preview
+          key={previewFont?.id}
+          fontId={previewFont?.id}
+          fontName={previewFont?.fullName}
+          color={previewColor}
+          fontSize={previewSize}
+          width={(rect?.width ?? 0) - 24}
+          height={(rect?.height ?? 0) - 24}>
+          Ag
+        </Preview>
+        <Footer>
+          <FooterStyleSelect>
+            {styles.length > 1 && (
+              <IconButton onClick={handlePrevStyle}>
+                <CaretLeftIcon />
+              </IconButton>
             )}
-          </Footer>
-        </Content>
+            <span>{styles[selectedIndex]}</span>
+            {styles.length > 1 && (
+              <IconButton onClick={handleNextStyle}>
+                <CaretRightIcon />
+              </IconButton>
+            )}
+          </FooterStyleSelect>
+          {styles.length > 1 && (
+            <span className="num-styles">{styles.length} styles</span>
+          )}
+        </Footer>
       </Container>
     </ContextMenu>
   )

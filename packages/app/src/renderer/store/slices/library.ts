@@ -1,4 +1,4 @@
-import { View } from './preview'
+export type View = 'grid' | 'list'
 
 export interface LibrarySlice {
   'library.active.id': number | null

@@ -1,5 +1,3 @@
-export type View = 'grid' | 'list'
-
 export interface PreviewSlice {
   'preview.text': string
   'preview.size': number
@@ -17,7 +15,7 @@ export default function create(set: SetState): PreviewSlice {
         'preview.text': text,
       }))
     },
-    'preview.size': 18,
+    'preview.size': 72,
     updatePreviewSize: (size: number) => {
       set(() => ({
         'preview.size': size,

@@ -2,7 +2,7 @@ import { RefObject, useState } from 'react'
 import { useEventListener } from 'usehooks-ts'
 
 export default function usePress<T extends HTMLElement = HTMLElement>(
-  ref: RefObject<T>
+  ref: RefObject<T>,
 ) {
   const [isPressed, setPressed] = useState(false)
 

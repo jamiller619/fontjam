@@ -2,7 +2,7 @@ import { Flex } from '@radix-ui/themes'
 import { HTMLAttributes, memo } from 'react'
 import styled from 'styled-components'
 import { Font } from '@shared/types/dto'
-import useFontData, { useFontFace } from '~/hooks/useFontData'
+import useOpenTypeFont, { useFontFace } from '~/hooks/useOpenTypeFont'
 
 type GlyphsProps = HTMLAttributes<HTMLDivElement> & {
   data?: Font
@@ -70,7 +70,7 @@ function Glyph({ data }: GlyphProps) {
 }
 
 function Glyphs({ data, postscriptFamilyName, ...props }: GlyphsProps) {
-  const fontData = useFontData(data)
+  const fontData = useOpenTypeFont(data)
   const isLoaded = useFontFace(data, postscriptFamilyName)
 
   const loop = new Array(fontData?.numGlyphs).fill(false)
