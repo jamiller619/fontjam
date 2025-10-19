@@ -5,13 +5,14 @@
   "license": "MIT",
   "private": true,
   "workspaces": [
+    "apps/*",
     "packages/*"
   ],
   "engines": {
-    "node": ">=20.6"
+    "node": ">=24.9"
   },
   "scripts": {
-    "dx": "yarn workspace @fontjam/app dx"
+    "dx": "yarn workspace @fontjam/electron dx"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.2.0",

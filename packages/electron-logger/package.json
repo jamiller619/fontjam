@@ -1,0 +1,13 @@
+{
+  "name": "@fontjam/electron-logger",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "yarn tsup src/index.ts --dts --format esm --out-dir dist --external electron"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0"
+  }
+}
