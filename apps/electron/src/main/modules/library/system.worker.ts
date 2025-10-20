@@ -4,7 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 import * as dto from '@shared/types/dto'
 import * as FontRepository from '~/modules/font/FontRepository'
-import * as entity from '~/modules/font/entity'
+import * as entity from '~/modules/font/types'
 import { generateHash } from '~/modules/font/hash'
 import { ParsedFont, parse } from '~/modules/font/parser'
 

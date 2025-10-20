@@ -133,7 +133,7 @@ export default class Application {
         if (module) {
           this.log.info(`Destroying module: ${name}`)
 
-          await module.destroy()
+          await module.onDestroy()
         } else {
           this.log.warn(`Module ${name} not found`)
         }

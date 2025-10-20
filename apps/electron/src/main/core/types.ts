@@ -1,6 +1,7 @@
 import TypedEmitter, { EventMap } from 'typed-emitter'
 import { Logger } from '@fontjam/electron-logger'
 import type { ConfigStore } from '~/config'
+import ModuleEvents from '~/modules/ModuleEvents'
 
 export type ModuleEventPayload<K extends PropertyKey, T> = {
   module: string
@@ -8,6 +9,10 @@ export type ModuleEventPayload<K extends PropertyKey, T> = {
   data: T
   timestamp: number
 }
+
+export type ModuleEventData<K extends keyof ModuleEvents> = Parameters<
+  ModuleEvents[K]
+>[0]
 
 /**
  * Converts each event signature `(data: T) => void`

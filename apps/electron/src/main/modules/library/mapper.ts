@@ -1,6 +1,6 @@
 import * as dto from '@shared/types/dto'
 import { date } from '~/db'
-import * as entity from './entity'
+import * as entity from './types'
 
 export function to(library: dto.Library) {
   const mapped: entity.Library = {

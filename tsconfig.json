@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
 
-    "target": "ES2022",
+    "target": "esnext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "esModuleInterop": true,

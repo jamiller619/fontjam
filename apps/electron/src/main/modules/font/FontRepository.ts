@@ -5,8 +5,8 @@ import * as dto from '@shared/types/dto'
 import { AllowNullableKeys } from '@shared/types/utils'
 import { ConfigStore } from '~/config'
 import { Repository, date } from '~/db'
-import * as entity from './entity'
 import * as mapper from './mapper'
+import { entity } from './types'
 
 export default class FontRepository extends Repository {
   constructor(config: ConfigStore, log: Logger) {

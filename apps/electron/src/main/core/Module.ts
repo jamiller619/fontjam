@@ -1,31 +1,38 @@
 import fs from 'node:fs/promises'
 import { ipcMain, utilityProcess } from 'electron'
-import TypedEventEmitter, { EventMap } from 'typed-emitter'
+import TypedEmitter from 'typed-emitter'
 import { Logger } from '@fontjam/electron-logger'
 import { APIResponse } from '@shared/types/dto'
 import { ConfigStore } from '~/config'
-import { Repository } from '~/db'
 import ModuleEvents from '~/modules/ModuleEvents'
-import { ModuleContext, ModuleEventPayload, WrappedEventMap } from './types'
+import { ModuleEventPayload, WrappedEventMap } from './EventBus'
+import { ModuleEventData } from './types'
 
-export default abstract class Module<E extends EventMap = ModuleEvents> {
+export type ModuleContext = {
+  eventBus: TypedEmitter<WrappedEventMap<ModuleEvents>>
+  config: ConfigStore
+  log: Logger
+}
+
+export default abstract class Module {
   name: string
-  #ctx: ModuleContext<E>
-
-  abstract repository: Repository
+  #ctx: ModuleContext
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abstract api: Record<string, (...args: any[]) => any>
+
+  abstract onDestroy(): Promise<void>
+  protected abstract onInitialize(
+    browserWindow: Electron.BrowserWindow,
+  ): Promise<void>
   protected abstract getWorkerPath(): string
 
-  abstract destroy(): Promise<void>
-
-  constructor(name: string, ctx: ModuleContext<E>) {
+  constructor(name: string, ctx: ModuleContext) {
     this.name = name
     this.#ctx = ctx
   }
 
-  get eventBus(): TypedEventEmitter<WrappedEventMap<E>> {
+  get eventBus(): TypedEmitter<WrappedEventMap<ModuleEvents>> {
     return this.#ctx.eventBus
   }
 
@@ -37,40 +44,33 @@ export default abstract class Module<E extends EventMap = ModuleEvents> {
     return this.#ctx.log
   }
 
-  getRepository(): Repository {
-    return this.repository
-  }
-
-  async initialize(mainWindow: Electron.BrowserWindow) {
+  async initialize(browserWindow: Electron.BrowserWindow) {
     await fs.mkdir(this.config.get('worker.path'), {
       recursive: true,
     })
 
-    this.setupIPC()
-    this.setupEventBus(mainWindow)
-
-    await this.onInitialize()
-  }
-
-  abstract onInitialize(): Promise<void>
-
-  setupIPC() {
+    // Setup IPC handlers
     for (const name of Object.keys(this.api)) {
       ipcMain.handle(name, async (_, ...args) => this.api[name](...args))
     }
+
+    await this.onInitialize(browserWindow)
+
+    this.#setupEventBus(browserWindow)
   }
 
-  setupEventBus(mainWindow?: Electron.BrowserWindow) {
-    for (const event of Object.keys(this.eventBus.eventNames())) {
-      this.eventBus.on(
-        event,
-        (payload) => mainWindow?.webContents.send(event, payload),
+  #setupEventBus(mainWindow: Electron.BrowserWindow) {
+    for (const event of Object.keys(
+      this.eventBus.eventNames(),
+    ) as (keyof ModuleEvents)[]) {
+      this.eventBus.on(event, (payload: unknown) =>
+        mainWindow.webContents.send(event, payload),
       )
     }
   }
 
-  emit<K extends keyof E>(event: K, data: Parameters<E[K]>[0]): void {
-    const payload: ModuleEventPayload<K, Parameters<E[K]>[0]> = {
+  emit<K extends keyof ModuleEvents>(event: K, data: ModuleEventData<K>): void {
+    const payload: ModuleEventPayload<K, ModuleEventData<K>> = {
       module: this.name,
       event,
       data,
@@ -82,13 +82,13 @@ export default abstract class Module<E extends EventMap = ModuleEvents> {
     method(event, payload)
   }
 
-  on<K extends keyof E>(
-    event: K,
-    handler: (payload: Parameters<E[K]>[0]) => void,
-  ): void {
-    this.eventBus.on(event, (payload) => {
-      handler(payload.data)
-    })
+  on<K extends keyof ModuleEvents>(event: K, handler: ModuleEvents[K]): void {
+    const typedHandler = handler as (arg: ModuleEventData<K>) => void
+    const handle = (payload: ModuleEventPayload<K, ModuleEventData<K>>) => {
+      typedHandler(payload.data)
+    }
+
+    this.eventBus.on(event, handle as WrappedEventMap<ModuleEvents>[K])
   }
 
   async spawnWorker<InputData, OutputResult>(

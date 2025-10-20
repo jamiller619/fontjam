@@ -4,8 +4,8 @@ import * as dto from '@shared/types/dto'
 import { AllowNullableKeys } from '@shared/types/utils'
 import { ConfigStore } from '~/config'
 import { Repository } from '~/db'
-import * as entity from './entity'
 import * as mapper from './mapper'
+import * as entity from './types'
 
 export default class LibraryRepository extends Repository {
   constructor(config: ConfigStore, log: Logger) {

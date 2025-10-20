@@ -16,7 +16,7 @@ export default class FontModule extends Module {
     await this.repository.initialize()
   }
 
-  override async destroy() {
+  override async onDestroy() {
     await this.repository.close()
   }
 

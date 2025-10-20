@@ -1,5 +1,5 @@
 import Module from './Module'
-import { ModuleContext } from './types'
+import ModuleContext from './ModuleContext'
 
 // export type ModuleDefaultExport<E extends EventMap = EventMap> = (
 //   name: string,
