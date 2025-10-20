@@ -1,6 +1,6 @@
 import * as dto from '@shared/types/dto'
 import { date } from '~/db'
-import * as entity from './types'
+import { entity } from './types'
 
 export const font = {
   fromEntity: (font: entity.Font): dto.Font => {

@@ -5,7 +5,7 @@ import { AllowNullableKeys } from '@shared/types/utils'
 import { ConfigStore } from '~/config'
 import { Repository } from '~/db'
 import * as mapper from './mapper'
-import * as entity from './types'
+import { entity } from './types'
 
 export default class LibraryRepository extends Repository {
   constructor(config: ConfigStore, log: Logger) {

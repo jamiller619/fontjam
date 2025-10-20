@@ -11,7 +11,6 @@ import {
   FontVariationAxis,
   FontVariationInstance,
 } from '@shared/types/dto'
-import log from '~/logger'
 import fontFileExtensions from './fontFileExtensions.json'
 
 export type ParsedFont = Pick<
